@@ -1,6 +1,6 @@
 {
     "name": "restfront-node-commons",
-    "version": "1.0.28",
+    "version": "0.2",
     "description": "",
     "main": "index.js",
     "scripts": {
