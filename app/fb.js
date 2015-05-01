@@ -20,7 +20,7 @@
     exports.parseUrl = parseUrl;
 
     /**
-     * Подлключение к БД
+     * Подключение к БД
      *
      * @param url       Путь к БД
      * @param user      Пользователь
