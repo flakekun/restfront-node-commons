@@ -10,9 +10,9 @@
     "license": "proprietary",
     "private": true,
     "dependencies": {
-        "bcrypt": "^0.8.1",
-        "express-jwt": "^2.1.0",
-        "jsonwebtoken": "^4.2.1",
+        "bcrypt": "^0.8.3",
+        "express-jwt": "^3.0.0",
+        "jsonwebtoken": "^5.0.0",
         "node-firebird": "flakekun/node-firebird"
     },
     "devDependencies": {
