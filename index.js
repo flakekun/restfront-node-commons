@@ -2,6 +2,7 @@
     'use strict';
 
     module.exports = {
+        /** @member {FB} */
         get fb() {
             return require('./app/fb');
         },

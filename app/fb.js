@@ -1,9 +1,24 @@
+/**
+ * FB
+ * @module fb
+ */
+
 (function () {
     'use strict';
 
     var Firebird = require('node-firebird');
     var Q = require('q');
     var moment = require('moment');
+
+    module.exports = new FB();
+
+    /**
+     *
+     * @constructor
+     */
+    function FB() {
+
+    }
 
     /**
      * Создать подключение к БД
@@ -13,11 +28,11 @@
      * @param password  Пароль
      * @returns {Connection}
      */
-    exports.createConnection = function (url, user, password) {
+    FB.prototype.createConnection = function (url, user, password) {
         return new Connection(url, user, password);
     };
 
-    exports.parseUrl = parseUrl;
+    FB.prototype.parseUrl = parseUrl;
 
     /**
      * Подключение к БД
@@ -29,13 +44,16 @@
      */
     function Connection(url, user, password) {
         this.database = null;
+        /** @member {Transaction} */
         this.readTransaction = null;
 
         this.options = parseUrl(url);
         this.options.user = user;
         this.options.password = password;
 
+        /** @member {Metadata} */
         this.metadata = new Metadata(this);
+        /** @member {Migration} */
         this.migration = new Migration(this);
     }
 
@@ -54,7 +72,7 @@
                 }
 
                 self.database = db;
-                resolve();
+                resolve(self);
             });
         });
     };
@@ -86,7 +104,7 @@
                     }
 
                     self.database = null;
-                    resolve();
+                    resolve(self);
                 });
             }
 
