@@ -34,6 +34,8 @@
 
     FB.prototype.parseUrl = parseUrl;
 
+    FB.prototype.escape = Firebird.escape;
+
     /**
      * Подключение к БД
      *
