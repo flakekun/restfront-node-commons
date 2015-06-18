@@ -106,7 +106,7 @@
                     }
 
                     self.database = null;
-                    resolve(self);
+                    resolve();
                 });
             }
 

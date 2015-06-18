@@ -71,7 +71,10 @@
                         .then(function (transaction) {
                             assert.notEqual(transaction, null);
 
-                            return transaction.rollback().finally(done);
+                            return transaction.rollback()
+                                .finally(function () {
+                                    done();
+                                });
                         });
                 })
                 .done();
@@ -91,7 +94,10 @@
                                     assert.notEqual(transaction2, null);
                                     assert.equal(transaction1, transaction2);
 
-                                    return connection.close().finally(done);
+                                    return connection.close()
+                                        .finally(function() {
+                                            done();
+                                        });
                                 });
                         });
                 })
@@ -117,7 +123,9 @@
                         .then(transaction.rollback.bind(transaction));
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
 
@@ -134,7 +142,9 @@
                     assert.equal(result[0].num, 3);
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
 
@@ -151,7 +161,9 @@
                     assert.equal(result[0].num, 3);
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
 
@@ -187,7 +199,9 @@
                         .then(statement.drop.bind(statement));
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
 
@@ -209,7 +223,9 @@
                         .then(statement.drop.bind(statement));
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
 
@@ -248,7 +264,9 @@
                         .then(transaction.commit.bind(transaction));
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
     });
@@ -273,7 +291,9 @@
                     });
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
 
@@ -296,7 +316,9 @@
                     });
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
 
@@ -319,7 +341,9 @@
                     });
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
 
@@ -346,7 +370,9 @@
                     });
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
 
@@ -369,7 +395,9 @@
                     });
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
 
@@ -392,7 +420,9 @@
                     });
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
 
@@ -415,7 +445,9 @@
                     });
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
 
@@ -438,7 +470,9 @@
                     });
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
     });
@@ -461,7 +495,9 @@
                         });
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
 
@@ -476,7 +512,7 @@
                 })
                 .then(function () {
                     return connection.getWriteTransaction()
-                        .then(function(tr) {
+                        .then(function (tr) {
                             return connection.migration.log(tr, 1, 'migration', null, 'author')
                                 .then(tr.commit.bind(tr));
                         });
@@ -488,7 +524,9 @@
                         });
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function() {
+                    done();
+                })
                 .done();
         });
 
@@ -512,7 +550,9 @@
                         .then(tr.commit.bind(tr));
                 })
                 .then(connection.close.bind(connection))
-                .then(done)
+                .then(function () {
+                    done();
+                })
                 .done();
         }
     });

@@ -3,32 +3,45 @@
 
     var fs = require('fs');
     var moment = require('moment');
+    var winston = require('winston');
+    var expressWinston = require('express-winston');
 
-    // TODO: как-то разруливать отсутствие winston в использующем проекте
-    try {
-        var winston = require('winston');
-        var expressWinston = require('express-winston');
-    } catch (e) {}
-
-    // Public объект
     module.exports = {
-        init: init,
-        createRequestLog: createRequestLog
+        // Инициализация системы логов
+        init: function (logPath, filePrefix) {
+            _logPath = (logPath) ? logPath + '/' : './';
+            _logFilePrefix = filePrefix || 'app';
+
+            preparePath();
+            setupAppLog();
+        },
+
+        // Настройка лога запросов
+        createRequestLog: function () {
+            return expressWinston.logger({
+                transports: [
+                    new winston.transports.DailyRotateFile({
+                        name: 'request-daily',
+                        filename: _logPath + 'request',
+                        datePattern: '_yyyy-MM-dd.log',
+                        level: 'info',
+                        handleExceptions: true,
+                        json: false,
+                        formatter: requestFormatter
+                    })
+                ],
+                msg: '{{res.statusCode}} {{req.method}} "{{req.url}}" - {{res._headers["content-length"]}} - {{res.responseTime}} ms',
+                meta: false,
+                statusLevels: true
+            });
+        }
     };
 
-    // Расширяем его методами из winston
-    if (winston) {
-        winston.extend(module.exports);
-    }
+    // Расширяем exports объект методами из winston
+    winston.extend(module.exports);
 
-    var _logPath = '';
-
-    function init(logPath) {
-        _logPath = (logPath) ? logPath + '/' : './';
-
-        preparePath();
-        setupAppLog();
-    }
+    var _logPath = '',
+        _logFilePrefix = 'app';
 
     function preparePath() {
         try {
@@ -42,10 +55,12 @@
 
     // Настройка лога приложения
     function setupAppLog() {
-        // Удаляем лог в консоль по умолчанию
+        // Удаляем текущие логи
         winston.remove('console');
+        winston.remove('app-daily-console');
+        winston.remove('app-daily-file');
 
-        // Лог в файл
+        // Лог в консоль
         winston.add(winston.transports.Console, {
             name: 'app-daily-console',
             level: 'info',
@@ -53,10 +68,10 @@
             formatter: appFormatter
         });
 
-        // Лог в консоль
+        // Лог в файл
         winston.add(winston.transports.DailyRotateFile, {
-            name: 'app-daily',
-            filename: _logPath + 'app',
+            name: 'app-daily-file',
+            filename: _logPath + _logFilePrefix,
             datePattern: '_yyyy-MM-dd.log',
             level: 'info',
             handleExceptions: true,
@@ -65,25 +80,6 @@
         });
     }
 
-    // Настройка лога запросов
-    function createRequestLog() {
-        return expressWinston.logger({
-            transports: [
-                new winston.transports.DailyRotateFile({
-                    name: 'request-daily',
-                    filename: _logPath + 'request',
-                    datePattern: '_yyyy-MM-dd.log',
-                    level: 'info',
-                    handleExceptions: true,
-                    json: false,
-                    formatter: requestFormatter
-                })
-            ],
-            msg: '{{res.statusCode}} {{req.method}} "{{req.url}}" - {{res._headers["content-length"]}} - {{res.responseTime}} ms',
-            meta: false,
-            statusLevels: true
-        });
-    }
 
     function appFormatter(options) {
         return options.level.toUpperCase() + ' [' + moment().format('YYYY-MM-DD HH:mm:ss') + '] ' + (undefined !== options.message ? options.message : '');
