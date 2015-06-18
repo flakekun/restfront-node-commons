@@ -55,10 +55,8 @@
 
     // Настройка лога приложения
     function setupAppLog() {
-        // Удаляем текущие логи
-        winston.remove('console');
-        winston.remove('app-daily-console');
-        winston.remove('app-daily-file');
+        // Удаляем текущие транспорты
+        winston.clear();
 
         // Лог в консоль
         winston.add(winston.transports.Console, {
