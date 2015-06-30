@@ -62,7 +62,7 @@
     /**
      * Открыть соединение с БД
      *
-     * @promise {}
+     * @promise {Connection}
      */
     Connection.prototype.open = function () {
         var self = this;
@@ -91,28 +91,28 @@
     /**
      * Закрыть соединение с БД
      *
-     * @promise {}
+     * @promise {nothing}
      */
     Connection.prototype.close = function () {
-        checkConnected(this);
-
         var self = this;
+
         return Q.Promise(function (resolve, reject) {
-            function detach() {
+            if (!self.isConnected()) {
+                return reject(new Error('Соединение с БД не установлено'));
+            }
+
+            // Если была открыта читающая транзакция, то сначала откатим ее
+            var promise = self.readTransaction ? self.readTransaction.rollback() : Q.resolve();
+            promise.then(function () {
                 self.database.detach(function (err) {
                     if (err) {
-                        reject(err);
-                        return;
+                        return reject(err);
                     }
 
                     self.database = null;
                     resolve();
                 });
-            }
-
-            // Если была открыта читающая транзакция, то сначала откатим ее
-            var promise = self.readTransaction ? self.readTransaction.rollback() : Q.resolve();
-            promise.then(detach);
+            });
         });
     };
 
@@ -121,10 +121,13 @@
      * @promise {Transaction}
      */
     Connection.prototype.getReadTransaction = function () {
-        checkConnected(this);
-
         var self = this;
+
         return Q.Promise(function (resolve, reject) {
+            if (!self.isConnected()) {
+                return reject(new Error('Соединение с БД не установлено'));
+            }
+
             // Если читающая транзакция есть, то сразу отдадим ее
             if (self.readTransaction) {
                 return resolve(self.readTransaction);
@@ -150,10 +153,13 @@
      * @promise {Transaction}
      */
     Connection.prototype.getWriteTransaction = function () {
-        checkConnected(this);
-
         var self = this;
+
         return Q.Promise(function (resolve, reject) {
+            if (!self.isConnected()) {
+                return reject(new Error('Соединение с БД не установлено'));
+            }
+
             // Откроем пишущую транзакцию
             self.database.transaction(Firebird.ISOLATION_WRITE, function (err, fbTransaction) {
                 if (err) {
@@ -170,9 +176,9 @@
     /**
      * Выполнить запрос на указанной транзакции
      *
-     * @param transaction Транзакция
-     * @param sql         Текст запроса
-     * @param params      Массив параметров запроса
+     * @param transaction {Transaction}  Транзакция
+     * @param sql         {String}       Текст запроса
+     * @param params      {Array}        Массив параметров запроса
      * @promise {data}
      */
     Connection.prototype.query = function (transaction, sql, params) {
@@ -566,18 +572,6 @@
             return result && result.length > 0;
         });
     };
-
-
-    /**
-     * Проверка активности соединения, если не активно - бросаем исключение
-     *
-     * @param connection Соединение
-     */
-    function checkConnected(connection) {
-        if (!connection.isConnected()) {
-            throw new Error('Not connected to database');
-        }
-    }
 
     /**
      * Выполнить запрос на указанной транзакции
