@@ -5,13 +5,17 @@
 
     var log = require('./log');
 
+    module.exports = new HttpUtils();
+
+    function HttpUtils() {}
+
     /**
      * Закончить http запрос успешным ответом
      *
      * @param res  {ServerResponse} HTTP ответ
      * @param data {Object|Array}   Данные для ответа
      */
-    module.exports.respondSuccess = function (res, data) {
+    HttpUtils.prototype.respondSuccess = function (res, data) {
         // Подготовим данные к ответу на клиент
         prepareForResponse(data);
 
@@ -26,7 +30,7 @@
      * @param res   {ServerResponse} HTTP ответ
      * @param error {Error|String}   Ошибка
      */
-    module.exports.respondError = function (res, error) {
+    HttpUtils.prototype.respondError = function (res, error) {
         // Определяем текст ошибки
         var message = (error) ? error.message || error : '';
 
@@ -45,7 +49,7 @@
             .json(body);
     };
 
-    module.exports.respondUnauthorized = function (res, message) {
+    HttpUtils.prototype.respondUnauthorized = function (res, message) {
         var body = {
             status: 401,
             error: 'Unauthorized',
@@ -58,7 +62,7 @@
             .json(body);
     };
 
-    module.exports.createSuccessResponse = function (res, actualResult) {
+    HttpUtils.prototype.createSuccessResponse = function (res, actualResult) {
         return function (result) {
             if (actualResult) {
                 result = actualResult;
@@ -67,7 +71,7 @@
         }.bind(this);
     };
 
-    module.exports.createErrorResponse = function (res) {
+    HttpUtils.prototype.createErrorResponse = function (res) {
         return function (error) {
             this.respondError(res, error);
         }.bind(this);

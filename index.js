@@ -1,18 +1,22 @@
 (function() {
     'use strict';
 
+    var FB = require('./app/fb');
+    var Log = require('./app/log');
+    var Auth = require('./app/auth');
+    var HttpUtils = require('./app/http');
+
     module.exports = {
         /** @member {FB} */
-        get fb() {
-            return require('./app/fb');
-        },
+        fb: FB,
 
-        get log() {
-            return require('./app/log');
-        },
+        /** @member {Log} */
+        log: Log,
 
-        get auth() {
-            return require('./app/auth');
-        }
+        /** @member {Auth} */
+        auth: Auth,
+
+        /** @member {HttpUtils} */
+        http: HttpUtils
     };
 })();
