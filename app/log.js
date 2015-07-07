@@ -58,6 +58,41 @@
         });
     };
 
+    /**
+     * Создать функтор из метода Log.logAndRethrow
+     *
+     * @param {String} caption Заголовок сообщения об ошибке
+     * @returns {function(this:Log)} Функтор
+     */
+    Log.prototype.createLogAndRethrow = function (caption) {
+        return function (e) {
+            this.logAndRethrow(caption, e);
+        }.bind(this);
+    };
+
+    /**
+     * Записать в лог сообщение об ошибке, только если передана ошибка
+     *
+     * @param [e] Ошибка
+     */
+    Log.prototype.logIfError = function (e) {
+        if (e) {
+            this.error(e.stack || e.message || e);
+        }
+    };
+
+    /**
+     * Записать в лог сообщение об ошибке и перебросить исключение
+     *
+     * @param {String} caption Заголовок сообщения об ошибке
+     * @param e Ошибка
+     */
+    Log.prototype.logAndRethrow = function (caption, e) {
+        var message = e ? e.stack || e.message || e : '';
+        this.error('%s: %s', caption, message);
+        throw e;
+    };
+
     function preparePath() {
         try {
             fs.mkdirSync(_logPath);

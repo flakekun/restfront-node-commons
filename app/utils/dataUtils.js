@@ -10,7 +10,7 @@
     /**
      * Создать функцию-преобразователь результата БД запроса для получения массива объектов
      *
-     * @param {Function} Constructor Функция-конструктор
+     * @param {Function} [Constructor] Функция-конструктор
      * @returns {Function<Array>}
      */
     DataUtils.prototype.prepareArrayMapper = function (Constructor) {
@@ -26,7 +26,7 @@
     /**
      * Создать функцию-преобразователь результата БД запроса для получения одного объекта
      *
-     * @param {Function} Constructor Функция-конструктор
+     * @param {Function} [Constructor] Функция-конструктор
      * @returns {Function<Object>}
      */
     DataUtils.prototype.prepareObjectMapper = function (Constructor) {
