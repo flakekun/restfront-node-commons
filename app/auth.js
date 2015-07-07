@@ -163,7 +163,7 @@
                                     // Храним ID и NAME пользователя в токене
                                     var jwtPayload = {
                                         id: user.id,
-                                        name: user.name
+                                        login: user.login
                                     };
 
                                     // Тело http ответа
