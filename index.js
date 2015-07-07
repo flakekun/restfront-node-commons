@@ -4,7 +4,8 @@
     var FB = require('./app/fb');
     var Log = require('./app/log');
     var Auth = require('./app/auth');
-    var HttpUtils = require('./app/http');
+    var HttpUtils = require('./app/httpUtils');
+    var MomentUtils = require('./app/momentUtils');
 
     module.exports = {
         /** @member {FB} */
@@ -17,6 +18,9 @@
         auth: Auth,
 
         /** @member {HttpUtils} */
-        http: HttpUtils
+        httpUtils: HttpUtils,
+
+        /** @member {MomentUtils} */
+        momentUtils: MomentUtils
     };
 })();
