@@ -3,7 +3,7 @@
 
     var _ = require('underscore');
 
-    var log = require('./log');
+    var log = require('../log');
 
     module.exports = new HttpUtils();
 

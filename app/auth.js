@@ -7,7 +7,7 @@
     var Q = require('q');
 
     var Log = require('./log');
-    var HttpUtils = require('./httpUtils');
+    var HttpUtils = require('./utils/httpUtils');
 
     module.exports = new Auth();
 
