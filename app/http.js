@@ -31,21 +31,23 @@
      * @param error {Error|String}   Ошибка
      */
     HttpUtils.prototype.respondError = function (res, error) {
-        // Определяем текст ошибки
+        // Определяем данные ошибки
+        var status = (error && error.status) ? error.status : 500;
+        var name = (error && error.name) ? error.name : 'Server Error';
         var message = (error) ? error.message || error : '';
 
         // Запишем предупреждение в лог приложения
         log.warn(message);
 
         var body = {
-            status: 500,
-            error: 'Server Error',
+            status: status,
+            error: name,
             message: message
         };
 
-        // Отвечаем клиенту с кодом 500
+        // Отвечаем клиенту с кодом 'status'
         res
-            .status(500)
+            .status(status)
             .json(body);
     };
 
