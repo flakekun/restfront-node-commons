@@ -4,132 +4,181 @@
     var bcrypt = require('bcrypt');
     var jwt = require('jsonwebtoken');
     var expressJwt = require('express-jwt');
-    var q = require('q');
+    var Q = require('q');
 
-    var log = require('..').log;
+    var Log = require('./log');
+    var HttpUtils = require('./http');
 
-    /**
-     * Хеширование пароля
-     * @param {string} password Пароль
-     * @promise {string} Хеш пароля
-     */
-    exports.hashPassword = hashPassword;
-
-    /**
-     * Проверка валидности пароля при сверке с хешем
-     * @param {string} password  Пароль
-     * @param {string} hash      Хеш пароля
-     * @promise {boolean} Валиден ли пароль
-     */
-    exports.validatePassword = validatePassword;
-
-    /**
-     * Создать express middleware для проверки Basic HTTP аутентификации
-     * @param userStore Хранилище пользователей
-     * @returns {Function} express middleware
-     */
-    exports.createBasicAuthenticator = createBasicAuthenticator;
-
-    /**
-     * Создать аутентификатор для проверки аутентификации на основе jwt-токена
-     * @param userStore   Хранилище пользователей
-     * @param privateKey  Секретный ключ для генерации jwt-токенов
-     * @returns {Object}
-     */
-    exports.createTokenAuthenticator = createTokenAuthenticator;
-
-    function hashPassword(password) {
-        var deferred = q.defer();
-
-        bcrypt.genSalt(10, function (err, salt) {
-            bcrypt.hash(password, salt, function (err, hash) {
-                if (err) {
-                    deferred.reject(err);
-                }
-
-                deferred.resolve(hash);
-            });
-        });
-
-        return deferred.promise;
-    }
-
-    function validatePassword(password, hash) {
-        var deferred = q.defer();
-
-        bcrypt.compare(password, hash, function (err, res) {
-            if (err) {
-                deferred.reject(err);
-            }
-
-            deferred.resolve(res);
-        });
-
-        return deferred.promise;
-    }
-
-    function createBasicAuthenticator(userStore) {
-        if (!userStore || !userStore.getUserByLogin) {
-            log.warn('Хранилище пользователей не указано или не поддерживает метод getUserByLogin - аутентификация не проверяется');
-        }
-
-        return function (req, res, next) {
-            // Пропускаем аутентификацию, если что-то не то с хранилищем пользователей
-            if (!userStore || !userStore.getUserByLogin) {
-                next();
-                return;
-            }
-
-            // Парсим заголовок аутентификации
-            var authData = parseBasicAuthData(req);
-
-            if (authData) {
-                // Запрашиваем пользователя по логину у хранилища пользователей
-                userStore.getUserByLogin(authData.login)
-                    .then(function (user) {
-                        if (!user) {
-                            return q.reject();
+    var Auth = module.exports = {
+        /**
+         * Хеширование пароля
+         * @param {string} password Пароль
+         * @promise {string} Хеш пароля
+         */
+        hashPassword: function (password) {
+            // Возвращаем результат через обещание
+            return Q.Promise(function (resolve, reject) {
+                // Генерация соли
+                bcrypt.genSalt(10, function (err, salt) {
+                    // Хеширование пароля
+                    bcrypt.hash(password, salt, function (err, hash) {
+                        if (err) {
+                            return reject(err);
                         }
 
-                        // Если нашли пользователя, то проверяем пароль
-                        return validatePassword(authData.password, user.password).then(function (passwordValid) {
-                            // Если пароль верен, то запоминаем пользователя и разрешаем переход к следующему ресурсу
-                            if (passwordValid) {
-                                req.user = user;
-                                next();
-                            } else {
-                                // .. иначе отвечаем 401
-                                sendUnauthorized(res);
+                        resolve(hash);
+                    });
+                });
+            });
+        },
+
+        /**
+         * Проверка валидности пароля при сверке с хешем
+         * @param {string} password  Пароль
+         * @param {string} hash      Хеш пароля
+         * @promise {boolean} Валиден ли пароль
+         */
+        validatePassword: function (password, hash) {
+            // Возвращаем результат через обещание
+            return Q.Promise(function (resolve, reject) {
+                bcrypt.compare(password, hash, function (err, res) {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(res);
+                });
+            });
+        },
+
+        /**
+         * Создать express middleware для проверки Basic HTTP аутентификации
+         * @param userStore Хранилище пользователей
+         * @returns {Function} express middleware
+         */
+        createBasicAuthenticator: function (userStore) {
+            if (!userStore || !userStore.getUserByLogin) {
+                Log.warn('Хранилище пользователей не указано или не поддерживает метод getUserByLogin - аутентификация не проверяется');
+            }
+
+            return function (req, res, next) {
+                // Пропускаем аутентификацию, если что-то не то с хранилищем пользователей
+                if (!userStore || !userStore.getUserByLogin) {
+                    next();
+                    return;
+                }
+
+                // Парсим заголовок аутентификации
+                var authData = parseBasicAuthData(req);
+
+                if (authData) {
+                    // Запрашиваем пользователя по логину у хранилища пользователей
+                    userStore.getUserByLogin(authData.login)
+                        .then(function (user) {
+                            if (!user) {
+                                return Q.reject();
                             }
-                        });
-                    })
-                    .catch(function () {
-                        sendUnauthorized(res);
-                    })
-                    .done();
-            } else {
-                // Если не смогли разобрать заголовок аутентификации, то отвечаем 401
-                sendUnauthorized(res);
-            }
-        };
-    }
 
-    function createTokenAuthenticator(userStore, privateKey) {
-        if (!userStore || !userStore.getUserByLogin) {
-            log.warn('Хранилище пользователей не указано или не поддерживает метод getUserByLogin - аутентификация не проверяется');
+                            // Если нашли пользователя, то проверяем пароль
+                            return Auth.validatePassword(authData.password, user.password).then(function (passwordValid) {
+                                // Если пароль верен, то запоминаем пользователя и разрешаем переход к следующему ресурсу
+                                if (passwordValid) {
+                                    req.user = user;
+                                    next();
+                                } else {
+                                    // .. иначе отвечаем 401
+                                    HttpUtils.respondUnauthorized(res);
+                                }
+                            });
+                        })
+                        .catch(function () {
+                            HttpUtils.respondUnauthorized(res);
+                        })
+                        .done();
+                } else {
+                    // Если не смогли разобрать заголовок аутентификации, то отвечаем 401
+                    HttpUtils.respondUnauthorized(res);
+                }
+            };
+        },
+
+        /**
+         * Создать аутентификатор для проверки аутентификации на основе jwt-токена
+         *
+         * @param privateKey      {String}   Секретный ключ для генерации jwt-токенов
+         * @param getUserCallback {Function} Функция для получения пользователя по паролю
+         * @returns {Object}
+         */
+        createTokenAuthenticator: function (privateKey, getUserCallback) {
+            if (!getUserCallback) {
+                Log.warn('Не указан метод для получения пользователей - аутентификация не работает');
+            }
+
+            // Express middleware
+            var jwtMiddleware = expressJwt({secret: privateKey});
+
+            return {
+                /**
+                 * Express middleware для проверки и декодинга jwt токенов
+                 */
+                middleware: jwtMiddleware,
+
+                /**
+                 * Express middleware для логина и генерации jwt токена
+                 */
+                loginEndpoint: function (req, res) {
+                    var login, password;
+
+                    // Из тела запроса берем данные логина
+                    if (req.body) {
+                        login = req.body.login;
+                        password = req.body.password;
+                    }
+
+                    // Если не указаны данные логина - поругаемся
+                    if (!login || !password) {
+                        return HttpUtils.respondUnauthorized(res);
+                    }
+
+                    // Запрашиваем пользователя по логину у хранилища пользователей
+                    getUserCallback(login)
+                        .then(function (user) {
+                            if (!user) {
+                                return HttpUtils.respondUnauthorized(res);
+                            }
+
+                            // Если нашли пользователя, то проверяем пароль
+                            return Auth.validatePassword(password, user.password)
+                                .then(function (passwordValid) {
+                                    // Если пароль верен, то ответим клиенту сгенерированным токеном
+                                    if (passwordValid) {
+                                        // Храним ID и NAME пользователя в токене
+                                        var jwtPayload = {
+                                            id: user.id,
+                                            name: user.name
+                                        };
+
+                                        // Тело http ответа
+                                        var body = {
+                                            token: jwt.sign(jwtPayload, privateKey)
+                                        };
+
+                                        // Ответим клиенту
+                                        HttpUtils.respondSuccess(res, body);
+                                    } else {
+                                        // .. иначе отвечаем 401
+                                        HttpUtils.respondUnauthorized(res);
+                                    }
+                                });
+                        })
+                        .catch(function () {
+                            HttpUtils.respondUnauthorized(res);
+                        })
+                        .done();
+                }
+            };
         }
-
-        var _privateKey = privateKey;
-
-        return {
-            middleware: function (req, res, next) {
-
-            },
-            loginEndpoint: function (req, res, next) {
-
-            }
-        };
-    }
+    };
 
     /**
      * Парсинг данных Basic HTTP аутентификации из заголовка запроса
@@ -161,47 +210,4 @@
 
         return {login: auth[1], password: auth[2]};
     }
-
-    function parseTokenAuthData(req) {
-        var auth = req.headers.authorization;
-        if (!auth) {
-            return;
-        }
-
-        var parts = auth.split(' ');
-        if (parts.length === 2) {
-            var scheme = parts[0];
-            var token = parts[1];
-
-            if (/^Bearer$/i.test(scheme)) {
-                return token;
-            }
-        }
-    }
-
-    function sendUnauthorized(res) {
-        res
-            .status(401)
-            .set('WWW-Authenticate', 'Basic realm="Restfront Delivery"')
-            .send('Unauthorized');
-    }
-
-    /**
-     * Исключение бросаемое при ошибке аутентификации
-     * @param code
-     * @param error
-     * @constructor
-     */
-    function UnauthorizedError(code, error) {
-        Error.call(this, error.message);
-        Error.captureStackTrace(this, this.constructor);
-        this.name = "UnauthorizedError";
-        this.message = error.message;
-        this.code = code;
-        this.status = 401;
-        this.inner = error;
-    }
-
-    UnauthorizedError.prototype = Object.create(Error.prototype);
-    UnauthorizedError.prototype.constructor = UnauthorizedError;
 })();

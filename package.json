@@ -1,6 +1,6 @@
 {
     "name": "restfront-node-commons",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "description": "",
     "main": "index.js",
     "scripts": {
@@ -17,6 +17,7 @@
         "moment": "^2.10.3",
         "node-firebird": "flakekun/node-firebird",
         "q": "^1.2.0",
+        "underscore": "^1.8.3",
         "winston": "^1.0.0"
     },
     "devDependencies": {
