@@ -601,7 +601,7 @@
      */
     function parseUrl(url) {
         if (!url) {
-            return null;
+            return;
         }
 
         var result = {

@@ -60,20 +60,19 @@
          * Создать moment на основе переданной даты
          *
          * @param {Date} date Дата
-         * @returns {moment|null}
+         * @returns {moment|undefined}
          */
         fromDate: function (date) {
             if (date) {
                 return moment(date);
             }
-            return null;
         },
 
         /**
          * Парсинг даты
          *
          * @param {Date|String} dateStr Дата
-         * @returns {moment|null}
+         * @returns {moment|undefined}
          */
         parseDate: function (dateStr) {
             if (dateStr) {
@@ -82,14 +81,13 @@
                 }
                 return moment(dateStr, DATE_FORMAT);
             }
-            return null;
         },
 
         /**
          * Парсинг времени
          *
          * @param {Date|String} timeStr Время
-         * @returns {moment|null}
+         * @returns {moment|undefined}
          */
         parseTime: function (timeStr) {
             if (timeStr) {
@@ -98,14 +96,13 @@
                 }
                 return moment(timeStr, TIME_FORMAT);
             }
-            return null;
         },
 
         /**
          * Парсинг даты и времени
          *
          * @param {Date|String} dateTimeStr Дата и время
-         * @returns {moment|null}
+         * @returns {moment|undefined}
          */
         parseDateTime: function (dateTimeStr) {
             if (dateTimeStr) {
@@ -114,7 +111,6 @@
                 }
                 return moment(dateTimeStr, DATETIME_FORMAT);
             }
-            return null;
         }
     };
 })();
