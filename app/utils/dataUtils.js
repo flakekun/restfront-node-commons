@@ -8,6 +8,37 @@
     function DataUtils() {}
 
     /**
+     * Получить значение свойства из объекта, без учета чувствительности к регистру,
+     * с возможностью указания нескольких названий свойства и значения по умолчанию.
+     *
+     * @param {Object}               object         Объект
+     * @param {Array<String>|String} propNames      Название свойства, или массив названий
+     * @param {*}                    [defaultValue] Значение по умолчанию
+     * @returns {*} Значение свойства
+     */
+    DataUtils.prototype.get = function(object, propNames, defaultValue) {
+        if (Array.isArray(propNames)) {
+            for (var i = 0; i < propNames.length; i++) {
+                var propName = propNames[i];
+                if (object[propName]) {
+                    return object[propName];
+                }
+
+                propName = propName.toLowerCase();
+                if (object[propName]) {
+                    return object[propName];
+                }
+            }
+
+            return defaultValue;
+        } else if (_.isString(propNames)) {
+            return object[propNames] || object[propNames.toLowerCase()] || defaultValue;
+        } else {
+            return defaultValue;
+        }
+    };
+
+    /**
      * Создать функцию-преобразователь результата БД запроса для получения массива объектов
      *
      * @param {Function} [Constructor] Функция-конструктор
@@ -67,7 +98,7 @@
     DataUtils.prototype.filterKeys = function (array) {
         var self = this;
 
-        if (!_.isArray(array)) {
+        if (!Array.isArray(array)) {
             throw new Error('Not an array');
         }
 
