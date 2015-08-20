@@ -71,30 +71,32 @@
         /**
          * Парсинг даты
          *
-         * @param {Date|String} dateStr Дата
+         * @param {Date|String} dateStr  Дата
+         * @param {String}      [format] Формат даты
          * @returns {moment|undefined}
          */
-        parseDate: function (dateStr) {
+        parseDate: function (dateStr, format) {
             if (dateStr) {
                 if (moment.isDate(dateStr)) {
                     return this.fromDate(dateStr);
                 }
-                return moment(dateStr, DATE_FORMAT);
+                return moment(dateStr, format || DATE_FORMAT);
             }
         },
 
         /**
          * Парсинг времени
          *
-         * @param {Date|String} timeStr Время
+         * @param {Date|String} timeStr  Время
+         * @param {String}      [format] Формат времени
          * @returns {moment|undefined}
          */
-        parseTime: function (timeStr) {
+        parseTime: function (timeStr, format) {
             if (timeStr) {
                 if (moment.isDate(timeStr)) {
                     return this.fromDate(timeStr);
                 }
-                return moment(timeStr, TIME_FORMAT);
+                return moment(timeStr, format || TIME_FORMAT);
             }
         },
 
@@ -102,14 +104,15 @@
          * Парсинг даты и времени
          *
          * @param {Date|String} dateTimeStr Дата и время
+         * @param {String}      [format]    Формат даты и времени
          * @returns {moment|undefined}
          */
-        parseDateTime: function (dateTimeStr) {
+        parseDateTime: function (dateTimeStr, format) {
             if (dateTimeStr) {
                 if (moment.isDate(dateTimeStr)) {
                     return this.fromDate(dateTimeStr);
                 }
-                return moment(dateTimeStr, DATETIME_FORMAT);
+                return moment(dateTimeStr, format || DATETIME_FORMAT);
             }
         }
     };
