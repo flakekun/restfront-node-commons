@@ -10,7 +10,6 @@
     "license": "proprietary",
     "private": true,
     "dependencies": {
-        "bcrypt": "^0.8.3",
         "express-jwt": "^3.0.0",
         "express-winston": "^0.2.12",
         "jsonwebtoken": "^5.0.0",
@@ -21,6 +20,7 @@
         "winston": "^1.0.0"
     },
     "devDependencies": {
+        "bcrypt": "^0.8.3",
         "mocha": "^2.2.1"
     },
     "jshintConfig": {

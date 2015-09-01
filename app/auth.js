@@ -1,7 +1,6 @@
 (function () {
     'use strict';
 
-    var bcrypt = require('bcrypt');
     var jwt = require('jsonwebtoken');
     var expressJwt = require('express-jwt');
     var Q = require('q');
@@ -19,6 +18,11 @@
      * @promise {string} Хеш пароля
      */
     Auth.prototype.hashPassword = function (password) {
+        var bcrypt = require('bcrypt');
+        if (!bcrypt) {
+            return Q.reject(new Error('Необходимо установить модуль bcrypt'));
+        }
+
         // Возвращаем результат через обещание
         return Q.Promise(function (resolve, reject) {
             // Генерация соли
@@ -42,6 +46,11 @@
      * @promise {boolean} Валиден ли пароль
      */
     Auth.prototype.validatePassword = function (password, hash) {
+        var bcrypt = require('bcrypt');
+        if (!bcrypt) {
+            return Q.reject(new Error('Необходимо установить модуль bcrypt'));
+        }
+
         // Возвращаем результат через обещание
         return Q.Promise(function (resolve, reject) {
             bcrypt.compare(password, hash, function (err, res) {
