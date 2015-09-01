@@ -17,8 +17,11 @@
      * @augments winston
      */
     function Log() {
+        this.logger = new winston.Logger();
         // Расширяем объект методами из winston
-        winston.extend(this);
+        this.logger.extend(this);
+
+        setupAppConsoleLog(this);
     }
 
     /**
@@ -32,7 +35,7 @@
         _logFilePrefix = filePrefix || 'app';
 
         preparePath();
-        setupAppLog();
+        setupAppFileLog(this);
     };
 
     /**
@@ -104,23 +107,38 @@
     }
 
     /**
-     * Настройка лога приложения
+     * Лог в консоль
      */
-    function setupAppLog() {
-        // Удаляем текущие транспорты
-        winston.clear();
+    function setupAppConsoleLog(obj) {
+        var loggerName = 'app-daily-console';
 
-        // Лог в консоль
-        winston.add(winston.transports.Console, {
-            name: 'app-daily-console',
+        // Удаляем текущий транспорт
+        if (obj.logger.transports[loggerName]) {
+            obj.logger.remove(loggerName);
+        }
+
+        obj.logger.add(winston.transports.Console, {
+            name: loggerName,
             level: 'info',
             handleExceptions: true,
             formatter: appFormatter
         });
+    }
+
+    /**
+     * Лог в файл
+     */
+    function setupAppFileLog(obj) {
+        var loggerName = 'app-daily-file';
+
+        // Удаляем текущий транспорт
+        if (obj.logger.transports[loggerName]) {
+            obj.logger.remove(loggerName);
+        }
 
         // Лог в файл
-        winston.add(winston.transports.DailyRotateFile, {
-            name: 'app-daily-file',
+        obj.logger.add(winston.transports.DailyRotateFile, {
+            name: loggerName,
             filename: _logPath + _logFilePrefix,
             datePattern: '_yyyy-MM-dd.log',
             level: 'info',
