@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    var FB = require('./app/fb');
+    var FB = require('./app/firebird/firebird');
     var Log = require('./app/log');
     var Auth = require('./app/auth');
     var HttpUtils = require('./app/utils/httpUtils');

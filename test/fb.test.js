@@ -42,6 +42,33 @@
         });
     });
 
+    describe('fb.pool', function () {
+        it('pool.getConnection', function (done) {
+            var pool = fb.createPool(5, options.database, options.user, options.password);
+            assert(pool != null, 'pool is not created');
+
+            pool.getConnection()
+                .then(function (connection) {
+                    assert(connection.isConnected(), 'connection is not opened');
+
+                    return connection.queryRead('SELECT 1 AS num FROM rdb$database')
+                        .then(function(result) {
+                            assert.notEqual(result, null);
+                            assert.equal(result.length, 1);
+                            assert.equal(result[0].num, 1);
+                        })
+                        .then(function() {
+                            return pool.close();
+                        })
+                        .then(function () {
+                            done();
+                        });
+                })
+                .done();
+        });
+    });
+
+
     describe('fb.connection', function () {
         it('connection.open, connection.close', function (done) {
             var connection = fb.createConnection(options.database, options.user, options.password);
