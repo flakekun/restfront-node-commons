@@ -254,6 +254,47 @@
                 .done();
         });
 
+        it('transaction can prepare statement', function (done) {
+            var connection = fb.createConnection(options.database, options.user, options.password);
+
+            connection.open()
+                .then(function () {
+                    return connection.getReadTransaction();
+                })
+                .then(function (transaction) {
+                    return transaction.prepareStatement('SELECT 1 + CAST(? AS INTEGER) AS num FROM rdb$database');
+                })
+                .then(function (statement) {
+                    assert.notEqual(statement, null);
+
+                    return q()
+                        .then(function () {
+                            return statement.execute([1]).then(function (result) {
+                                assert.equal(result[0].num, 2);
+                                statement.close();
+                            });
+                        })
+                        .then(function () {
+                            return statement.execute([2]).then(function (result) {
+                                assert.equal(result[0].num, 3);
+                                statement.close();
+                            });
+                        })
+                        .then(function () {
+                            return statement.execute([3]).then(function (result) {
+                                assert.equal(result[0].num, 4);
+                                statement.close();
+                            });
+                        })
+                        .then(statement.drop.bind(statement));
+                })
+                .then(connection.close.bind(connection))
+                .then(function() {
+                    done();
+                })
+                .done();
+        });
+
         it('statement can execute procedure', function (done) {
             var connection = fb.createConnection(options.database, options.user, options.password);
 

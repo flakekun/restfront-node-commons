@@ -2,6 +2,7 @@
     'use strict';
 
     var Q = require('q');
+    var PreparedStatement = require('./statement');
     var utils = require('./utils');
 
     module.exports = Transaction;
@@ -69,6 +70,29 @@
                 }
 
                 resolve();
+            });
+        });
+    };
+
+    /**
+     * Создание prepared statement
+     *
+     * @param sql Текст запроса
+     * @promise {PreparedStatement}
+     */
+    Transaction.prototype.prepareStatement = function (sql) {
+        var self = this;
+        utils.updateLastActive(self.connection);
+
+        return Q.Promise(function (resolve, reject) {
+            self.transaction.newStatement(sql, function (err, statement) {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+
+                var wrapper = new PreparedStatement(self.connection, self, statement);
+                resolve(wrapper);
             });
         });
     };
