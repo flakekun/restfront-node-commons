@@ -32,6 +32,10 @@
         this.metadata = new Metadata(this);
         /** @member {Migration} */
         this.migration = new Migration(this);
+
+        // Время последней активности соединения
+        this.lastActive = 0;
+        utils.updateLastActive(this);
     }
 
     /**
@@ -41,6 +45,8 @@
      */
     Connection.prototype.open = function () {
         var self = this;
+        utils.updateLastActive(self);
+
         return Q.Promise(function (resolve, reject) {
             FBDriver.attach(self.options, function (err, db) {
                 if (err) {
@@ -70,6 +76,7 @@
      */
     Connection.prototype.close = function () {
         var self = this;
+        utils.updateLastActive(self);
 
         return Q.Promise(function (resolve, reject) {
             if (!self.isConnected()) {
@@ -97,6 +104,7 @@
      */
     Connection.prototype.getReadTransaction = function () {
         var self = this;
+        utils.updateLastActive(self);
 
         return Q.Promise(function (resolve, reject) {
             if (!self.isConnected()) {
@@ -115,7 +123,7 @@
                     return;
                 }
 
-                var wrapper = new Transaction(fbTransaction);
+                var wrapper = new Transaction(self, fbTransaction);
                 self.readTransaction = wrapper;
                 resolve(wrapper);
             });
@@ -129,6 +137,7 @@
      */
     Connection.prototype.getWriteTransaction = function () {
         var self = this;
+        utils.updateLastActive(self);
 
         return Q.Promise(function (resolve, reject) {
             if (!self.isConnected()) {
@@ -142,7 +151,7 @@
                     return;
                 }
 
-                var wrapper = new Transaction(fbTransaction);
+                var wrapper = new Transaction(self, fbTransaction);
                 resolve(wrapper);
             });
         });
@@ -157,6 +166,8 @@
      * @promise {data}
      */
     Connection.prototype.query = function (transaction, sql, params) {
+        utils.updateLastActive(this);
+
         return utils.query(transaction, sql, params);
     };
 
@@ -168,6 +179,8 @@
      * @promise {data}
      */
     Connection.prototype.queryRead = function (sql, params) {
+        utils.updateLastActive(this);
+
         // Берем читающую транзакцию
         return this.getReadTransaction().then(function (tr) {
             // Выполняем запрос
@@ -183,6 +196,8 @@
      * @promise {data}
      */
     Connection.prototype.queryWrite = function (sql, params) {
+        utils.updateLastActive(this);
+
         // Берем новую пищущую транзакцию
         return this.getWriteTransaction().then(function (tr) {
             // Выполняем запрос
@@ -210,6 +225,9 @@
      * @promise {PreparedStatement}
      */
     Connection.prototype.prepareStatement = function (transactionWrapper, sql) {
+        var self = this;
+        utils.updateLastActive(self);
+
         return Q.Promise(function (resolve, reject) {
             transactionWrapper.transaction.newStatement(sql, function (err, statement) {
                 if (err) {
@@ -217,7 +235,7 @@
                     return;
                 }
 
-                var wrapper = new PreparedStatement(transactionWrapper, statement);
+                var wrapper = new PreparedStatement(self, transactionWrapper, statement);
                 resolve(wrapper);
             });
         });
@@ -231,9 +249,19 @@
      */
     Connection.prototype.prepareReadStatement = function (sql) {
         var self = this;
+        utils.updateLastActive(self);
+
         // Берем читающую транзакцию
         return this.getReadTransaction().then(function (tr) {
             return self.prepareStatement(tr, sql);
         });
+    };
+
+    /**
+     * Сколько мс соединение простаивало
+     * @returns {number}
+     */
+    Connection.prototype.getInactiveTime = function() {
+        return Date.now() - this.lastActive;
     };
 })();

@@ -194,6 +194,28 @@
                 .done();
         });
 
+        it('transaction can query', function (done) {
+            var connection = fb.createConnection(options.database, options.user, options.password);
+
+            connection.open()
+                .then(function () {
+                    return connection.getReadTransaction();
+                })
+                .then(function (transaction) {
+                    return transaction.query('SELECT 1 + CAST(? AS INTEGER) AS num FROM rdb$database', [2])
+                        .then(function (result) {
+                            assert.notEqual(result, null);
+                            assert.equal(result.length, 1);
+                            assert.equal(result[0].num, 3);
+                        });
+                })
+                .then(connection.close.bind(connection))
+                .then(function() {
+                    done();
+                })
+                .done();
+        });
+
         it('prepares statement and repeatedly executes it', function (done) {
             var connection = fb.createConnection(options.database, options.user, options.password);
 

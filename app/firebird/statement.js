@@ -2,19 +2,22 @@
     'use strict';
 
     var Q = require('q');
+    var utils = require('./utils');
 
     module.exports = PreparedStatement;
 
     /**
      * Обертка для Prepared statement
      *
+     * @param connection  Соединение
      * @param transactionWrapper Транзакция
-     * @param statement   FB prepared statement
+     * @param driverStatement   FB prepared statement
      * @constructor
      */
-    function PreparedStatement(transactionWrapper, statement) {
+    function PreparedStatement(connection, transactionWrapper, driverStatement) {
+        this.connection = connection;
         this.transaction = transactionWrapper.transaction;
-        this.statement = statement;
+        this.statement = driverStatement;
     }
 
     /**
@@ -29,6 +32,8 @@
             ISC_INFO_SQL_STMT_EXEC_PROCEDURE = 8;
 
         var self = this;
+        utils.updateLastActive(self.connection);
+
         return Q.Promise(function (resolve, reject) {
             self.statement.execute(self.transaction, params, function (err) {
                 if (err) {
@@ -88,6 +93,8 @@
      */
     PreparedStatement.prototype.close = function () {
         var self = this;
+        utils.updateLastActive(self.connection);
+
         return Q.Promise(function (resolve, reject) {
             self.statement.close(function (err) {
                 if (err) {
@@ -107,6 +114,8 @@
      */
     PreparedStatement.prototype.drop = function () {
         var self = this;
+        utils.updateLastActive(self.connection);
+
         return Q.Promise(function (resolve, reject) {
             self.statement.drop(function (err) {
                 if (err) {

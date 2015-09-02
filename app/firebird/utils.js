@@ -5,6 +5,7 @@
 
     module.exports.parseUrl = parseUrl;
     module.exports.query = query;
+    module.exports.updateLastActive = updateLastActive;
 
     /**
      * Разбор строки пути к БД
@@ -59,5 +60,13 @@
                 resolve(result);
             });
         });
+    }
+
+    /**
+     * Обновить время последней активности на соединении
+     * @param {Connection} connection Соединение
+     */
+    function updateLastActive(connection) {
+        connection.lastActive = Date.now();
     }
 })();
