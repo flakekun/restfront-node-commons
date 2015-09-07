@@ -1,7 +1,7 @@
-(function() {
+(function () {
     'use strict';
 
-    var Q = require('q');
+    var Promise = require('bluebird');
     var FBDriver = require('node-firebird');
     var Connection = require('./connection');
     var utils = require('./utils');
@@ -26,23 +26,18 @@
         this.pool = FBDriver.pool(maxConnections, this.options);
     }
 
-    Pool.prototype.getConnection = function() {
+    Pool.prototype.getConnection = function () {
         var self = this;
-        return Q.Promise(function (resolve, reject) {
-            self.pool.get(function(err, db) {
-                if (err) {
-                    reject(err);
-                    return;
-                }
 
+        return Promise.promisify(self.pool.get.bind(self.pool))()
+            .then(function (db) {
                 var connection = new Connection(self.options.url, self.options.user, self.options.password);
                 connection.database = db;
-                resolve(connection);
+                return connection;
             });
-        });
     };
 
-    Pool.prototype.close = function() {
+    Pool.prototype.close = function () {
         this.pool.destroy();
     };
 })();

@@ -2,7 +2,7 @@
     'use strict';
 
     var assert = require('assert');
-    var q = require('q');
+    var Promise = require('bluebird');
 
     var fb = require('..').fb;
 
@@ -130,6 +130,29 @@
                 })
                 .done();
         });
+
+        it('read transaction must not write', function (done) {
+            var connection = fb.createConnection(options.database, options.user, options.password);
+
+            connection.open()
+                .then(function () {
+                    return connection.getReadTransaction()
+                        .then(function (transaction) {
+                            return transaction.query('INSERT INTO test_table (int_field) VALUES (1) RETURNING int_field')
+                                .then(function(result) {
+                                    assert.fail('Read transaction did update. Must be an exception');
+                                })
+                                .catch(function(e) {
+                                    assert.notEqual(e, null);
+                                    assert.equal(e.code, 335544361);  // attempted update during read-only transaction
+                                })
+                                .finally(function () {
+                                    done();
+                                });
+                        });
+                })
+                .done();
+        });
     });
 
     describe('fb.queries', function () {
@@ -141,7 +164,7 @@
                     return connection.getWriteTransaction();
                 })
                 .then(function (transaction) {
-                    return connection.query(transaction, 'SELECT 1 + CAST(? AS INTEGER) AS num FROM rdb$database', [2])
+                    return transaction.query('SELECT 1 + CAST(? AS INTEGER) AS num FROM rdb$database', [2])
                         .then(function (result) {
                             assert.notEqual(result, null);
                             assert.equal(result.length, 1);
@@ -226,7 +249,7 @@
                 .then(function (statement) {
                     assert.notEqual(statement, null);
 
-                    return q()
+                    return Promise.resolve()
                         .then(function () {
                             return statement.execute([1]).then(function (result) {
                                 assert.equal(result[0].num, 2);
@@ -267,7 +290,7 @@
                 .then(function (statement) {
                     assert.notEqual(statement, null);
 
-                    return q()
+                    return Promise.resolve()
                         .then(function () {
                             return statement.execute([1]).then(function (result) {
                                 assert.equal(result[0].num, 2);
@@ -327,9 +350,9 @@
                     return connection.getWriteTransaction();
                 })
                 .then(function (transaction) {
-                    return connection.prepareStatement(transaction, 'INSERT INTO test_table (int_field) VALUES (?)')
+                    return transaction.prepareStatement('INSERT INTO test_table (int_field) VALUES (?)')
                         .then(function (statement) {
-                            return q()
+                            return Promise.resolve()
                                 .then(function () {
                                     return statement.execute([1]).then(function (result) {
                                         assert.notEqual(result, null);
@@ -349,7 +372,7 @@
                                 .then(statement.drop.bind(statement));
                         })
                         .then(function () {
-                            return connection.query(transaction, 'DELETE FROM test_table');
+                            return transaction.query('DELETE FROM test_table');
                         })
                         .then(transaction.commit.bind(transaction));
                 })
@@ -366,7 +389,7 @@
             var connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
                 .then(function () {
-                    return q.resolve().then(function () {
+                    return Promise.resolve().then(function () {
                         return connection.metadata.generatorExists('').then(function (exists) {
                             assert.equal(exists, false, 'Found not existent generator');
                         });
@@ -391,7 +414,7 @@
             var connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
                 .then(function () {
-                    return q.resolve().then(function () {
+                    return Promise.resolve().then(function () {
                         return connection.metadata.domainExists('').then(function (exists) {
                             assert.equal(exists, false, 'Found not existent domain');
                         });
@@ -416,7 +439,7 @@
             var connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
                 .then(function (tr) {
-                    return q.resolve().then(function () {
+                    return Promise.resolve().then(function () {
                         return connection.metadata.tableExists('').then(function (exists) {
                             assert.equal(exists, false, 'Found not existent table');
                         });
@@ -441,7 +464,7 @@
             var connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
                 .then(function () {
-                    return q.resolve().then(function () {
+                    return Promise.resolve().then(function () {
                         return connection.metadata.fieldExists('').then(function (exists) {
                             assert.equal(exists, false, 'Found not existent table field');
                         });
@@ -470,7 +493,7 @@
             var connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
                 .then(function () {
-                    return q.resolve().then(function () {
+                    return Promise.resolve().then(function () {
                         return connection.metadata.indexExists('').then(function (exists) {
                             assert.equal(exists, false, 'Found not existent index');
                         });
@@ -495,7 +518,7 @@
             var connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
                 .then(function () {
-                    return q.resolve().then(function () {
+                    return Promise.resolve().then(function () {
                         return connection.metadata.procedureExists('').then(function (exists) {
                             assert.equal(exists, false, 'Found not existent procedure');
                         });
@@ -520,7 +543,7 @@
             var connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
                 .then(function (tr) {
-                    return q.resolve().then(function () {
+                    return Promise.resolve().then(function () {
                         return connection.metadata.triggerExists('').then(function (exists) {
                             assert.equal(exists, false, 'Found not existent trigger');
                         });
@@ -545,7 +568,7 @@
             var connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
                 .then(function () {
-                    return q.resolve().then(function () {
+                    return Promise.resolve().then(function () {
                         return connection.metadata.exceptionExists('').then(function (exists) {
                             assert.equal(exists, false, 'Found not existent exception');
                         });

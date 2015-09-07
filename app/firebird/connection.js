@@ -1,10 +1,9 @@
 (function() {
     'use strict';
 
-    var Q = require('q');
+    var Promise = require('bluebird');
     var FBDriver = require('node-firebird');
     var Transaction = require('./transaction');
-    var PreparedStatement = require('./statement');
     var Metadata = require('./metadata');
     var Migration = require('./migration');
     var utils = require('./utils');
@@ -47,17 +46,11 @@
         var self = this;
         utils.updateLastActive(self);
 
-        return Q.Promise(function (resolve, reject) {
-            FBDriver.attach(self.options, function (err, db) {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-
+        return Promise.promisify(FBDriver.attach.bind(FBDriver))(self.options)
+            .then(function(db) {
                 self.database = db;
-                resolve(self);
+                return self;
             });
-        });
     };
 
     /**
@@ -78,13 +71,13 @@
         var self = this;
         utils.updateLastActive(self);
 
-        return Q.Promise(function (resolve, reject) {
+        return new Promise(function (resolve, reject) {
             if (!self.isConnected()) {
                 return reject(new Error('Соединение с БД не установлено'));
             }
 
             // Если была открыта читающая транзакция, то сначала откатим ее
-            var promise = self.readTransaction ? self.readTransaction.rollback() : Q.resolve();
+            var promise = self.readTransaction ? self.readTransaction.rollback() : Promise.resolve();
             promise.then(function () {
                 self.database.detach(function (err) {
                     if (err) {
@@ -106,7 +99,7 @@
         var self = this;
         utils.updateLastActive(self);
 
-        return Q.Promise(function (resolve, reject) {
+        return new Promise(function (resolve, reject) {
             if (!self.isConnected()) {
                 return reject(new Error('Соединение с БД не установлено'));
             }
@@ -139,7 +132,7 @@
         var self = this;
         utils.updateLastActive(self);
 
-        return Q.Promise(function (resolve, reject) {
+        return new Promise(function (resolve, reject) {
             if (!self.isConnected()) {
                 return reject(new Error('Соединение с БД не установлено'));
             }
@@ -168,7 +161,7 @@
     Connection.prototype.query = function (transaction, sql, params) {
         utils.updateLastActive(this);
 
-        return utils.query(transaction, sql, params);
+        return transaction.query(sql, params);
     };
 
     /**
@@ -182,9 +175,9 @@
         utils.updateLastActive(this);
 
         // Берем читающую транзакцию
-        return this.getReadTransaction().then(function (tr) {
+        return this.getReadTransaction().then(function (transaction) {
             // Выполняем запрос
-            return utils.query(tr, sql, params);
+            return transaction.query(sql, params);
         });
     };
 
@@ -199,20 +192,22 @@
         utils.updateLastActive(this);
 
         // Берем новую пищущую транзакцию
-        return this.getWriteTransaction().then(function (tr) {
+        return this.getWriteTransaction().then(function (transaction) {
             // Выполняем запрос
-            return utils.query(tr, sql, params)
+            return transaction.query(sql, params)
                 // Закомитим транзакцию, потом вернем результат запроса
                 .then(function (result) {
-                    return tr.commit()
+                    return transaction.commit()
                         .then(function () {
                             return result;
                         });
                 })
                 // В случае ошибки откатим транзакцию и, одновременно, перебросим ошибку
                 .catch(function (e) {
-                    tr.rollback();
-                    throw e;
+                    return transaction.rollback()
+                        .finally(function() {
+                            throw e;
+                        });
                 });
         });
     };
@@ -225,20 +220,9 @@
      * @promise {PreparedStatement}
      */
     Connection.prototype.prepareStatement = function (transactionWrapper, sql) {
-        var self = this;
-        utils.updateLastActive(self);
+        utils.updateLastActive(this);
 
-        return Q.Promise(function (resolve, reject) {
-            transactionWrapper.transaction.newStatement(sql, function (err, statement) {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-
-                var wrapper = new PreparedStatement(self, transactionWrapper, statement);
-                resolve(wrapper);
-            });
-        });
+        return transactionWrapper.prepareStatement(sql);
     };
 
     /**

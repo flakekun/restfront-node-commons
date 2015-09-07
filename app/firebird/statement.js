@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var Q = require('q');
+    var Promise = require('bluebird');
     var utils = require('./utils');
 
     module.exports = PreparedStatement;
@@ -34,11 +34,10 @@
         var self = this;
         utils.updateLastActive(self.connection);
 
-        return Q.Promise(function (resolve, reject) {
+        return new Promise(function (resolve, reject) {
             self.statement.execute(self.transaction, params, function (err) {
                 if (err) {
-                    reject(err);
-                    return;
+                    return reject(err);
                 }
 
                 switch (self.statement.type) {
@@ -48,8 +47,7 @@
                         if (self.statement.output && self.statement.output.length) {
                             self.statement.fetchAll(self.transaction, function (err, ret) {
                                 if (err) {
-                                    reject(err);
-                                    return;
+                                    return reject(err);
                                 }
 
                                 resolve(ret);
@@ -65,8 +63,7 @@
                         if (self.statement.output.length) {
                             self.statement.fetch(self.transaction, 1, function (err, ret) {
                                 if (err) {
-                                    reject(err);
-                                    return;
+                                    return reject(err);
                                 }
 
                                 resolve(ret.data);
@@ -92,19 +89,9 @@
      * @promise {}
      */
     PreparedStatement.prototype.close = function () {
-        var self = this;
-        utils.updateLastActive(self.connection);
+        utils.updateLastActive(this.connection);
 
-        return Q.Promise(function (resolve, reject) {
-            self.statement.close(function (err) {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-
-                resolve();
-            });
-        });
+        return Promise.promisify(this.statement.close.bind(this.statement))();
     };
 
     /**
@@ -113,18 +100,8 @@
      * @promise {}
      */
     PreparedStatement.prototype.drop = function () {
-        var self = this;
-        utils.updateLastActive(self.connection);
+        utils.updateLastActive(this.connection);
 
-        return Q.Promise(function (resolve, reject) {
-            self.statement.drop(function (err) {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-
-                resolve();
-            });
-        });
+        return Promise.promisify(this.statement.drop.bind(this.statement))();
     };
 })();

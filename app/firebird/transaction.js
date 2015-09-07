@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var Q = require('q');
+    var Promise = require('bluebird');
     var PreparedStatement = require('./statement');
     var utils = require('./utils');
 
@@ -22,78 +22,60 @@
     /**
      * Выполнить запрос на указанной транзакции
      *
-     * @param sql         {String}       Текст запроса
-     * @param params      {Array}        Массив параметров запроса
-     * @promise {data}
+     * @param {String} sql     Текст запроса
+     * @param {Array}  params  Массив параметров запроса
+     * @returns {Promise<data>}
      */
     Transaction.prototype.query = function (sql, params) {
-        utils.updateLastActive(this.connection);
+        var self = this;
+        utils.updateLastActive(self.connection);
 
-        return utils.query(this, sql, params);
+        return new Promise(function (resolve, reject) {
+            self.transaction.query(sql, params, function (err, result, output, isArray) {
+                if (err) {
+                    return reject(err);
+                }
+
+                resolve(result);
+            });
+        });
     };
 
     /**
      * Коммит транзакции
      *
-     * @promise {}
+     * @returns {Promise}
      */
     Transaction.prototype.commit = function () {
-        var self = this;
-        utils.updateLastActive(self.connection);
+        utils.updateLastActive(this.connection);
 
-        return Q.Promise(function (resolve, reject) {
-            self.transaction.commit(function (err) {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-
-                resolve();
-            });
-        });
+        return Promise.promisify(this.transaction.commit.bind(this.transaction))();
     };
 
     /**
      * Откат транзакции
      *
-     * @promise {}
+     * @returns {Promise}
      */
     Transaction.prototype.rollback = function () {
-        var self = this;
-        utils.updateLastActive(self.connection);
+        utils.updateLastActive(this.connection);
 
-        return Q.Promise(function (resolve, reject) {
-            self.transaction.rollback(function (err) {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-
-                resolve();
-            });
-        });
+        return Promise.promisify(this.transaction.rollback.bind(this.transaction))();
     };
 
     /**
      * Создание prepared statement
      *
      * @param sql Текст запроса
-     * @promise {PreparedStatement}
+     * @returns {Promise<PreparedStatement>}
      */
     Transaction.prototype.prepareStatement = function (sql) {
         var self = this;
         utils.updateLastActive(self.connection);
 
-        return Q.Promise(function (resolve, reject) {
-            self.transaction.newStatement(sql, function (err, statement) {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-
-                var wrapper = new PreparedStatement(self.connection, self, statement);
-                resolve(wrapper);
+        return Promise.promisify(self.transaction.newStatement.bind(self.transaction))(sql)
+            .then(function (statement) {
+                return new PreparedStatement(self.connection, self, statement);
             });
-        });
     };
 })();

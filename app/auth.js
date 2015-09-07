@@ -3,7 +3,7 @@
 
     var jwt = require('jsonwebtoken');
     var expressJwt = require('express-jwt');
-    var Q = require('q');
+    var Promise = require('bluebird');
 
     var Log = require('./log');
     var HttpUtils = require('./utils/httpUtils');
@@ -20,11 +20,11 @@
     Auth.prototype.hashPassword = function (password) {
         var bcrypt = require('bcrypt');
         if (!bcrypt) {
-            return Q.reject(new Error('Необходимо установить модуль bcrypt'));
+            return Promise.reject(new Error('Необходимо установить модуль bcrypt'));
         }
 
         // Возвращаем результат через обещание
-        return Q.Promise(function (resolve, reject) {
+        return new Promise(function (resolve, reject) {
             // Генерация соли
             bcrypt.genSalt(10, function (err, salt) {
                 // Хеширование пароля
@@ -48,11 +48,11 @@
     Auth.prototype.validatePassword = function (password, hash) {
         var bcrypt = require('bcrypt');
         if (!bcrypt) {
-            return Q.reject(new Error('Необходимо установить модуль bcrypt'));
+            return Promise.reject(new Error('Необходимо установить модуль bcrypt'));
         }
 
         // Возвращаем результат через обещание
-        return Q.Promise(function (resolve, reject) {
+        return new Promise(function (resolve, reject) {
             bcrypt.compare(password, hash, function (err, res) {
                 if (err) {
                     return reject(err);
@@ -91,7 +91,7 @@
                 userStore.getUserByLogin(authData.login)
                     .then(function (user) {
                         if (!user) {
-                            return Q.reject();
+                            return Promise.reject();
                         }
 
                         // Если нашли пользователя, то проверяем пароль

@@ -1,10 +1,7 @@
 (function() {
     'use strict';
 
-    var Q = require('q');
-
     module.exports.parseUrl = parseUrl;
-    module.exports.query = query;
     module.exports.updateLastActive = updateLastActive;
 
     /**
@@ -40,26 +37,6 @@
         }
 
         return result;
-    }
-
-    /**
-     * Выполнить запрос на указанной транзакции
-     * @param transactionWrapper Транзакция
-     * @param sql         Текст запроса
-     * @param params      Массив параметров запроса
-     * @promise {data}
-     */
-    function query(transactionWrapper, sql, params) {
-        return Q.Promise(function (resolve, reject) {
-            transactionWrapper.transaction.query(sql, params, function (err, result) {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-
-                resolve(result);
-            });
-        });
     }
 
     /**

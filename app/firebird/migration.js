@@ -37,9 +37,9 @@
                                 "  executeddate TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL " +
                                 ")";
 
-                            return utils.query(transaction, tableSql)
+                            return transaction.query(tableSql)
                                 .then(function () {
-                                    return utils.query(transaction, "ALTER TABLE rf_migration ADD CONSTRAINT rf_pk_migration PRIMARY KEY (id)");
+                                    return transaction.query("ALTER TABLE rf_migration ADD CONSTRAINT rf_pk_migration PRIMARY KEY (id)");
                                 })
                                 .then(transaction.commit.bind(transaction));
                         });
@@ -75,6 +75,6 @@
         migrationDate = migrationDate ? MomentUtils.fromDate(migrationDate).toDate() : null;
 
         var sql = "INSERT INTO rf_migration (id, name, migrationdate, author) VALUES(?, ?, ?, ?)";
-        return utils.query(transaction, sql, [id, name, migrationDate, author]);
+        return transaction.query(sql, [id, name, migrationDate, author]);
     };
 })();
