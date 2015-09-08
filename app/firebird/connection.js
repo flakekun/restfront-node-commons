@@ -20,8 +20,8 @@
      */
     function Connection(url, user, password) {
         this.database = null;
-        /** @member {Transaction} */
-        this.readTransaction = null;
+        /** @member {Promise<Transaction>} */
+        this.readTransactionPromise = null;
 
         this.options = utils.parseUrl(url);
         this.options.user = user;
@@ -76,18 +76,27 @@
                 return reject(new Error('Соединение с БД не установлено'));
             }
 
-            // Если была открыта читающая транзакция, то сначала откатим ее
-            var promise = self.readTransaction ? self.readTransaction.rollback() : Promise.resolve();
-            promise.then(function () {
-                self.database.detach(function (err) {
-                    if (err) {
-                        return reject(err);
+            Promise.resolve()
+                // Если была открыта читающая транзакция, то сначала откатим ее
+                .then(function() {
+                    if (self.readTransactionPromise) {
+                        return self.readTransactionPromise
+                            .then(function(transaction) {
+                                return transaction.rollback();
+                            });
                     }
+                })
+                // Отключаемся от БД
+                .then(function () {
+                    self.database.detach(function (err) {
+                        if (err) {
+                            return reject(err);
+                        }
 
-                    self.database = null;
-                    resolve();
+                        self.database = null;
+                        resolve();
+                    });
                 });
-            });
         });
     };
 
@@ -99,28 +108,25 @@
         var self = this;
         utils.updateLastActive(self);
 
-        return new Promise(function (resolve, reject) {
-            if (!self.isConnected()) {
-                return reject(new Error('Соединение с БД не установлено'));
-            }
-
-            // Если читающая транзакция есть, то сразу отдадим ее
-            if (self.readTransaction) {
-                return resolve(self.readTransaction);
-            }
-
-            // Откроем читающую транзакцию и запомним ее в этом соединении
-            self.database.transaction(FBDriver.ISOLATION_READ, function (err, fbTransaction) {
-                if (err) {
-                    reject(err);
-                    return;
+        // Если еще не обращались к читающей транзакции, то создадим Promise который будет содержать в себе читающую транзакцию
+        if (!self.readTransactionPromise) {
+            self.readTransactionPromise = new Promise(function (resolve, reject) {
+                if (!self.isConnected()) {
+                    return reject(new Error('Соединение с БД не установлено'));
                 }
 
-                var wrapper = new Transaction(self, fbTransaction);
-                self.readTransaction = wrapper;
-                resolve(wrapper);
+                // Откроем читающую транзакцию и запомним ее в этом соединении
+                self.database.transaction(FBDriver.ISOLATION_READ, function (err, fbTransaction) {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(new Transaction(self, fbTransaction));
+                });
             });
-        });
+        }
+
+        return self.readTransactionPromise;
     };
 
     /**
@@ -140,12 +146,10 @@
             // Откроем пишущую транзакцию
             self.database.transaction(FBDriver.ISOLATION_WRITE, function (err, fbTransaction) {
                 if (err) {
-                    reject(err);
-                    return;
+                    return reject(err);
                 }
 
-                var wrapper = new Transaction(self, fbTransaction);
-                resolve(wrapper);
+                resolve(new Transaction(self, fbTransaction));
             });
         });
     };
