@@ -80,7 +80,7 @@
      */
     Log.prototype.logIfError = function (e) {
         if (e) {
-            this.error(e.stack || e.message || e);
+            this.error(prepareErrorMessage(e));
         }
     };
 
@@ -91,10 +91,23 @@
      * @param e Ошибка
      */
     Log.prototype.logAndRethrow = function (caption, e) {
-        var message = e ? e.stack || e.message || e : '';
+        var message = prepareErrorMessage(e);
         this.error('%s: %s', caption, message);
         throw e;
     };
+
+    function prepareErrorMessage(e) {
+        var message = '';
+        if (e) {
+            message = message + e;
+            var stack = e.stack;
+            if (stack) {
+                message = message + '\n' + stack;
+            }
+        }
+
+        return message;
+    }
 
     function preparePath() {
         try {
