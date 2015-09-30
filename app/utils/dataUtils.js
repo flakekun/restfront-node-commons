@@ -20,22 +20,25 @@
         if (Array.isArray(propNames)) {
             for (var i = 0; i < propNames.length; i++) {
                 var propName = propNames[i];
-                if (object[propName]) {
+                if (object[propName] !== undefined) {
                     return object[propName];
                 }
 
                 propName = propName.toLowerCase();
-                if (object[propName]) {
+                if (object[propName] !== undefined) {
                     return object[propName];
                 }
             }
-
-            return defaultValue;
         } else if (_.isString(propNames)) {
-            return object[propNames] || object[propNames.toLowerCase()] || defaultValue;
-        } else {
-            return defaultValue;
+            if (object[propNames] !== undefined) {
+                return object[propNames];
+            }
+            if (object[propNames.toLowerCase()] !== undefined) {
+                return object[propNames.toLowerCase()];
+            }
         }
+
+        return defaultValue;
     };
 
     /**
