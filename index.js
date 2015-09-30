@@ -25,6 +25,8 @@
         momentUtils: MomentUtils,
 
         /** @member {DataUtils} */
-        dataUtils: DataUtils
+        dataUtils: DataUtils,
+
+        err: require('./app/utils/err')
     };
 })();

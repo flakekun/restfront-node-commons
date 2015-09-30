@@ -13,6 +13,7 @@
         "bluebird": "^2.9.34",
         "express-jwt": "^3.0.0",
         "express-winston": "^0.2.12",
+        "http-status": "^0.2.0",
         "jsonwebtoken": "^5.0.0",
         "moment": "^2.10.3",
         "node-firebird": "flakekun/node-firebird",

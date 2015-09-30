@@ -2,8 +2,8 @@
     'use strict';
 
     var _ = require('underscore');
-
-    var log = require('../log');
+    var HTTPStatus = require('http-status');
+    var Log = require('../log');
 
     module.exports = new HttpUtils();
 
@@ -20,7 +20,7 @@
         prepareForResponse(data);
 
         res
-            .status(200)
+            .status(HTTPStatus.OK)
             .json(data);
     };
 
@@ -32,36 +32,38 @@
      */
     HttpUtils.prototype.respondError = function (res, error) {
         // Определяем данные ошибки
-        var status = (error && error.status) ? error.status : 500;
-        var name = (error && error.name) ? error.name : 'Server Error';
+        var status = (error && error.status) ? error.status : HTTPStatus.INTERNAL_SERVER_ERROR;
+        var name = (error && error.name) ? error.name : HTTPStatus[HTTPStatus.INTERNAL_SERVER_ERROR];
         var message = (error) ? error.message || error : '';
 
         // Запишем предупреждение в лог приложения
-        log.warn(message);
+        Log.warn(message);
 
-        var body = {
+        // Отвечаем клиенту с кодом 'status'
+        res.status(status);
+
+        // Для 401 ставим заголовок
+        if (status === HTTPStatus.UNAUTHORIZED) {
+            res.set('WWW-Authenticate', 'Basic realm="RestFront"');
+        }
+
+        // Тело ответа
+        res.json({
             status: status,
             error: name,
             message: message
-        };
-
-        // Отвечаем клиенту с кодом 'status'
-        res
-            .status(status)
-            .json(body);
+        });
     };
 
     HttpUtils.prototype.respondUnauthorized = function (res, message) {
-        var body = {
-            status: 401,
-            error: 'Unauthorized',
-            message: message || ''
-        };
-
         res
-            .status(401)
-            .set('WWW-Authenticate', 'Basic realm="Restfront"')
-            .json(body);
+            .status(HTTPStatus.UNAUTHORIZED)
+            .set('WWW-Authenticate', 'Basic realm="RestFront"')
+            .json({
+                status: HTTPStatus.UNAUTHORIZED,
+                error: HTTPStatus[HTTPStatus.UNAUTHORIZED],
+                message: message || ''
+            });
     };
 
     HttpUtils.prototype.createSuccessResponse = function (res, actualResult) {
