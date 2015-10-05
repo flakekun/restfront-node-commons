@@ -20,20 +20,20 @@
         if (Array.isArray(propNames)) {
             for (var i = 0; i < propNames.length; i++) {
                 var propName = propNames[i];
-                if (object[propName] !== undefined) {
+                if (object[propName] != null) {
                     return object[propName];
                 }
 
                 propName = propName.toLowerCase();
-                if (object[propName] !== undefined) {
+                if (object[propName] != null) {
                     return object[propName];
                 }
             }
         } else if (_.isString(propNames)) {
-            if (object[propNames] !== undefined) {
+            if (object[propNames] != null) {
                 return object[propNames];
             }
-            if (object[propNames.toLowerCase()] !== undefined) {
+            if (object[propNames.toLowerCase()] != null) {
                 return object[propNames.toLowerCase()];
             }
         }

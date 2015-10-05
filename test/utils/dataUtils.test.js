@@ -17,19 +17,20 @@
 
             assert.strictEqual(DataUtils.get(data, 'first'), 'aaa');
             assert.strictEqual(DataUtils.get(data, 'second'), 0);
-            assert.strictEqual(DataUtils.get(data, 'third'), null);
+            assert.strictEqual(DataUtils.get(data, 'third'), undefined);
             assert.strictEqual(DataUtils.get(data, 'fourth'), '');
 
             assert.strictEqual(DataUtils.get(data, 'FIRST'), 'aaa');
             assert.strictEqual(DataUtils.get(data, 'SECOND'), 0);
-            assert.strictEqual(DataUtils.get(data, 'THIRD'), null);
+            assert.strictEqual(DataUtils.get(data, 'THIRD'), undefined);
             assert.strictEqual(DataUtils.get(data, 'FOURTH'), '');
 
             assert.strictEqual(DataUtils.get(data, ['fff', 'First']), 'aaa');
             assert.strictEqual(DataUtils.get(data, ['sss', 'Second']), 0);
-            assert.strictEqual(DataUtils.get(data, ['ttt', 'Third']), null);
+            assert.strictEqual(DataUtils.get(data, ['ttt', 'Third']), undefined);
             assert.strictEqual(DataUtils.get(data, ['fff', 'Fourth']), '');
 
+            assert.strictEqual(DataUtils.get(data, 'third', 1), 1);
             assert.strictEqual(DataUtils.get(data, 'fifth', 1), 1);
             assert.strictEqual(DataUtils.get(data, 'sixth', 1), 1);
         });
