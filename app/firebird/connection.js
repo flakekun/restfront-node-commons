@@ -65,7 +65,7 @@
     /**
      * Закрыть соединение с БД
      *
-     * @promise {nothing}
+     * @returns Promise
      */
     Connection.prototype.close = function () {
         var self = this;
@@ -102,7 +102,8 @@
 
     /**
      * Получить читающую транзакцию
-     * @promise {Transaction}
+     *
+     * @returns Promise<Transaction>
      */
     Connection.prototype.getReadTransaction = function () {
         var self = this;
@@ -132,7 +133,7 @@
     /**
      * Получить пишущую транзакцию
      *
-     * @promise {Transaction}
+     * @returns Promise<Transaction>
      */
     Connection.prototype.getWriteTransaction = function () {
         var self = this;
@@ -159,8 +160,8 @@
      *
      * @param transaction {Transaction}  Транзакция
      * @param sql         {String}       Текст запроса
-     * @param params      {Array}        Массив параметров запроса
-     * @promise {data}
+     * @param [params]    {Array}        Массив параметров запроса
+     * @returns Promise<Array>
      */
     Connection.prototype.query = function (transaction, sql, params) {
         utils.updateLastActive(this);
@@ -171,9 +172,9 @@
     /**
      * Выполнить запрос на читающей транзакции
      *
-     * @param sql    Текст запроса
-     * @param params Массив параметров запроса
-     * @promise {data}
+     * @param sql      {String}  Текст запроса
+     * @param [params] {Array}   Массив параметров запроса
+     * @returns Promise<Array>
      */
     Connection.prototype.queryRead = function (sql, params) {
         utils.updateLastActive(this);
@@ -188,9 +189,9 @@
     /**
      * Выполнить запрос на пишущей транзакции и сразу закомитить ее
      *
-     * @param sql    Текст запроса
-     * @param params Массив параметров запроса
-     * @promise {data}
+     * @param sql      {String}  Текст запроса
+     * @param [params] {Array}   Массив параметров запроса
+     * @returns Promise<Array>
      */
     Connection.prototype.queryWrite = function (sql, params) {
         utils.updateLastActive(this);
@@ -221,7 +222,7 @@
      *
      * @param transactionWrapper Транзакция
      * @param sql         Текст запроса
-     * @promise {PreparedStatement}
+     * @returns Promise<PreparedStatement>
      */
     Connection.prototype.prepareStatement = function (transactionWrapper, sql) {
         utils.updateLastActive(this);
@@ -233,7 +234,7 @@
      * Создание prepared statement на читающей транзакции
      *
      * @param sql Текст запроса
-     * @promise {PreparedStatement}
+     * @returns Promise<PreparedStatement>
      */
     Connection.prototype.prepareReadStatement = function (sql) {
         var self = this;

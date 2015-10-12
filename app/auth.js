@@ -18,7 +18,10 @@
      * @promise {string} Хеш пароля
      */
     Auth.prototype.hashPassword = function (password) {
-        var bcrypt = require('bcrypt');
+        var bcrypt;
+        try {
+            bcrypt = require('bcrypt');
+        } catch (e) {}
         if (!bcrypt) {
             return Promise.reject(new Error('Необходимо установить модуль bcrypt'));
         }
@@ -46,7 +49,10 @@
      * @promise {boolean} Валиден ли пароль
      */
     Auth.prototype.validatePassword = function (password, hash) {
-        var bcrypt = require('bcrypt');
+        var bcrypt;
+        try {
+            bcrypt = require('bcrypt');
+        } catch (e) {}
         if (!bcrypt) {
             return Promise.reject(new Error('Необходимо установить модуль bcrypt'));
         }

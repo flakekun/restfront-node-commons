@@ -46,6 +46,15 @@
             assert(!DataUtils.isValidKey(0));
         });
 
+        it('validKeyOrNull', function() {
+            assert.strictEqual(DataUtils.validKeyOrNull(1), 1);
+            assert.strictEqual(DataUtils.validKeyOrNull(0), null);
+            assert.strictEqual(DataUtils.validKeyOrNull(), null);
+            assert.strictEqual(DataUtils.validKeyOrNull(10000000), 10000000);
+            assert.strictEqual(DataUtils.validKeyOrNull('1'), '1');
+            assert.strictEqual(DataUtils.validKeyOrNull('a'), null);
+        });
+
         it('parseKey', function () {
             assert.strictEqual(DataUtils.parseKey('1'), 1);
             assert.strictEqual(DataUtils.parseKey('10'), 10);

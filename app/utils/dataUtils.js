@@ -82,6 +82,17 @@
     };
 
     /**
+     * Возвращаем ключ, если он валиден, иначе null
+     *
+     * @param {number} value Значение
+     * @returns {Number|null}
+     */
+    DataUtils.prototype.validKeyOrNull = function (value) {
+        return this.isValidKey(value) ? value : null;
+    };
+
+
+    /**
      * Парсинг ключа БД из строки
      *
      * @param {number} value Значение
