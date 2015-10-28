@@ -7,7 +7,7 @@
     var fb = require('..').fb;
 
     var options = {
-        database: 'localhost/3050:d:/bases/node_firebird.fdb',
+        database: 'rf-server/3050:d:/bases/test/node_firebird.fdb',
         user: 'SYSDBA',
         password: 'masterkey'
     };
