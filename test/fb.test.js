@@ -5,6 +5,7 @@
     var Promise = require('bluebird');
 
     var fb = require('..').fb;
+    var FirebirdUtils = require('../app/firebird/utils');
 
     var options = {
         database: 'rf-server/3050:d:/bases/test/node_firebird.fdb',
@@ -39,6 +40,28 @@
             assert.equal(parsed.host, '', 'invalid host');
             assert.equal(parsed.port, '', 'invalid port');
             assert.equal(parsed.database, 'd:/test.fdb', 'invalid database ');
+        });
+
+        it('parseServerVersion', function() {
+            var parsed;
+
+            parsed = FirebirdUtils.parseServerVersion(null);
+            assert.deepEqual(parsed, {major: 0, minor: 0, patch: 0});
+
+            parsed = FirebirdUtils.parseServerVersion('');
+            assert.deepEqual(parsed, {major: 0, minor: 0, patch: 0});
+
+            parsed = FirebirdUtils.parseServerVersion('1');
+            assert.deepEqual(parsed, {major: 1, minor: 0, patch: 0});
+
+            parsed = FirebirdUtils.parseServerVersion('2.1');
+            assert.deepEqual(parsed, {major: 2, minor: 1, patch: 0});
+
+            parsed = FirebirdUtils.parseServerVersion('2.5.3');
+            assert.deepEqual(parsed, {major: 2, minor: 5, patch: 3});
+
+            parsed = FirebirdUtils.parseServerVersion('3.0.3.1');
+            assert.deepEqual(parsed, {major: 3, minor: 0, patch: 3});
         });
     });
 
@@ -579,6 +602,26 @@
                     }).then(function () {
                         return connection.metadata.exceptionExists('test_exception_1').then(function (exists) {
                             assert.equal(exists, false, 'Found not existent exception');
+                        });
+                    });
+                })
+                .then(connection.close.bind(connection))
+                .then(function() {
+                    done();
+                })
+                .done();
+        });
+
+        it('can check server version', function (done) {
+            var connection = fb.createConnection(options.database, options.user, options.password);
+            connection.open()
+                .then(function () {
+                    return Promise.resolve().then(function () {
+                        return connection.metadata.getServerVersion().then(function (version) {
+                            assert.notEqual(version);
+                            assert.equal(version.major, 2, 'Invalid MAJOR server version');
+                            assert.equal(version.minor, 5, 'Invalid MINOR server version');
+                            assert.equal(version.patch, 3, 'Invalid PATCH server version');
                         });
                     });
                 })

@@ -1,7 +1,8 @@
-(function() {
+(function () {
     'use strict';
 
     var Promise = require('bluebird');
+    var Utils = require('./utils');
 
     module.exports = Metadata;
 
@@ -82,5 +83,14 @@
         return this.connection.queryRead(sql, [exceptionName.toUpperCase()]).then(function (result) {
             return result && result.length > 0;
         });
+    };
+
+    Metadata.prototype.getServerVersion = function () {
+        var sql = "SELECT COALESCE(rdb$get_context('SYSTEM', 'ENGINE_VERSION'), '') AS version FROM rdb$database";
+        return this.connection.queryRead(sql, [])
+            .then(function (result) {
+                var versionStr = (result && result.length > 0) ? result[0].version : '';
+                return Utils.parseServerVersion(versionStr);
+            });
     };
 })();

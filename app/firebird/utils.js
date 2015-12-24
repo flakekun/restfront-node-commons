@@ -3,6 +3,7 @@
 
     module.exports.parseUrl = parseUrl;
     module.exports.updateLastActive = updateLastActive;
+    module.exports.parseServerVersion = parseServerVersion;
 
     /**
      * Разбор строки пути к БД
@@ -45,5 +46,14 @@
      */
     function updateLastActive(connection) {
         connection.lastActive = Date.now();
+    }
+
+    function parseServerVersion(versionStr) {
+        var versionParts = (versionStr || '').split('.');
+        return {
+            major: versionParts.length > 0 ? versionParts[0] || 0 : 0,
+            minor: versionParts.length > 1 ? versionParts[1] || 0 : 0,
+            patch: versionParts.length > 2 ? versionParts[2] || 0 : 0
+        };
     }
 })();
