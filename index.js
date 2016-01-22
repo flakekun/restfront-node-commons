@@ -14,12 +14,59 @@
 
     function Index() { }
 
+    /**
+     * Firebird
+     *
+     * @type {FB}
+     */
     Index.prototype.fb = FB;
+
+    /**
+     * Логирование
+     *
+     * @type {Log}
+     */
     Index.prototype.log = Log;
+
+    /**
+     * Аутентификация
+     *
+     * @type {Auth}
+     */
     Index.prototype.auth = Auth;
+
+    /**
+     * Исключения
+     *
+     * @type {Err}
+     */
     Index.prototype.err = Err;
+
+    /**
+     * Миграции
+     *
+     * @type {Migrate}
+     */
     Index.prototype.migrate = Migrate;
+
+    /**
+     * Хелперы для работы с http
+     *
+     * @type {HttpUtils}
+     */
     Index.prototype.httpUtils = HttpUtils;
+
+    /**
+     * Хелперы для работы с датами
+     *
+     * @type {MomentUtils}
+     */
     Index.prototype.momentUtils = MomentUtils;
+
+    /**
+     * Хелперы для работы с данными из БД
+     *
+     * @type {DataUtils}
+     */
     Index.prototype.dataUtils = DataUtils;
 })();
