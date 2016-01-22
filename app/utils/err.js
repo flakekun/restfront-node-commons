@@ -3,9 +3,13 @@
 
     var HTTPStatus = require('http-status');
 
-    module.exports.UnauthorizedError = UnauthorizedError;
-    module.exports.NotFoundError = NotFoundError;
-    module.exports.NotAcceptableError = NotAcceptableError;
+    module.exports = new Err();
+
+    function Err() { }
+
+    Err.prototype.UnauthorizedError = UnauthorizedError;
+    Err.prototype.NotFoundError = NotFoundError;
+    Err.prototype.NotAcceptableError = NotAcceptableError;
 
     /**
      * HTTP 401 Unauthorized

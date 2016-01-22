@@ -4,29 +4,22 @@
     var FB = require('./app/firebird/firebird');
     var Log = require('./app/log');
     var Auth = require('./app/auth');
+    var Err = require('./app/utils/err');
     var HttpUtils = require('./app/utils/httpUtils');
     var MomentUtils = require('./app/utils/momentUtils');
     var DataUtils = require('./app/utils/dataUtils');
+    var Migrate = require('./app/migrate');
 
-    module.exports = {
-        /** @member {FB} */
-        fb: FB,
+    module.exports = new Index();
 
-        /** @member {Log} */
-        log: Log,
+    function Index() { }
 
-        /** @member {Auth} */
-        auth: Auth,
-
-        /** @member {HttpUtils} */
-        httpUtils: HttpUtils,
-
-        /** @member {MomentUtils} */
-        momentUtils: MomentUtils,
-
-        /** @member {DataUtils} */
-        dataUtils: DataUtils,
-
-        err: require('./app/utils/err')
-    };
+    Index.prototype.fb = FB;
+    Index.prototype.log = Log;
+    Index.prototype.auth = Auth;
+    Index.prototype.err = Err;
+    Index.prototype.migrate = Migrate;
+    Index.prototype.httpUtils = HttpUtils;
+    Index.prototype.momentUtils = MomentUtils;
+    Index.prototype.dataUtils = DataUtils;
 })();

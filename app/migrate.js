@@ -1,11 +1,15 @@
-(function() {
+(function () {
     'use strict';
 
     var Promise = require('bluebird');
-    var _ = require('underscore');
-    var Log = require('restfront-node-commons').log;
+    var _ = require('lodash');
+    var Log = require('./log');
 
-    module.exports.run = function (connection, migration) {
+    module.exports = new Migrate();
+
+    function Migrate() { }
+
+    Migrate.prototype.run = function (connection, migration) {
         // Проверяем правильность миграции
         return Promise.method(validateMigration)(migration)
 
