@@ -56,9 +56,9 @@
      * Враппер для коммита транзакции, который в случае успеха вернет переданный в него параметр или результат предыдущего обещания.
      *
      * @param [actualResult] Параметр который будет вернут обещанием после коммита транзакции
-     * @returns {function(this:Transaction)} Фукнция-враппер
+     * @returns {function(this:Transaction)} Функция-враппер
      */
-    Transaction.prototype.commitAndReturn = function (actualResult) {
+    Transaction.prototype.createCommitAndReturn = function (actualResult) {
         return function (result) {
             result = actualResult || result;
 
@@ -83,9 +83,9 @@
     /**
      * Враппер для отката транзакции, который после отката перебросит полученное исключение
      *
-     * @returns {function(this:Transaction)} Фукнция-враппер
+     * @returns {function(this:Transaction)} Функция-враппер
      */
-    Transaction.prototype.rollbackAndRethrow = function () {
+    Transaction.prototype.createRollbackAndRethrow = function () {
         return function (error) {
             return this.rollback()
                 .finally(function () {
