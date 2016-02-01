@@ -53,6 +53,23 @@
     };
 
     /**
+     * Враппер для коммита транзакции, который в случае успеха вернет переданный в него параметр или результат предыдущего обещания.
+     *
+     * @param [actualResult] Параметр который будет вернут обещанием после коммита транзакции
+     * @returns {function(this:Transaction)} Фукнция-враппер
+     */
+    Transaction.prototype.commitAndReturn = function (actualResult) {
+        return function (result) {
+            result = actualResult || result;
+
+            return this.commit()
+                .then(function () {
+                    return result;
+                });
+        }.bind(this);
+    };
+
+    /**
      * Откат транзакции
      *
      * @returns {Promise}
@@ -61,6 +78,20 @@
         utils.updateLastActive(this.connection);
 
         return Promise.promisify(this.transaction.rollback.bind(this.transaction))();
+    };
+
+    /**
+     * Враппер для отката транзакции, который после отката перебросит полученное исключение
+     *
+     * @returns {function(this:Transaction)} Фукнция-враппер
+     */
+    Transaction.prototype.rollbackAndRethrow = function () {
+        return function (error) {
+            return this.rollback()
+                .finally(function () {
+                    throw error;
+                });
+        }.bind(this);
     };
 
     /**
