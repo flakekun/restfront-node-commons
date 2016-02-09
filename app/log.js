@@ -50,7 +50,6 @@
                     filename: _logPath + 'request',
                     datePattern: '_yyyy-MM-dd.log',
                     level: 'info',
-                    handleExceptions: true,
                     json: false,
                     formatter: requestFormatter
                 })
