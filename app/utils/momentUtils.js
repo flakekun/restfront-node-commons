@@ -5,7 +5,7 @@
 
     var DATE_FORMAT = 'YYYY-MM-DD',
         TIME_FORMAT = 'HH:mm:ss',
-        DATETIME_FORMAT = 'YYYY-MM-DD HH:mm:ss.SSSS';
+        DATETIME_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 
     module.exports = new MomentUtils();
 
