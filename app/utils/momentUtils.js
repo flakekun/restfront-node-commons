@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    var moment = require('moment');
+    var Moment = require('moment');
 
     var DATE_FORMAT = 'YYYY-MM-DD',
         TIME_FORMAT = 'HH:mm:ss',
@@ -11,17 +11,21 @@
 
     function MomentUtils() { }
 
+    MomentUtils.prototype.now = function() {
+        return new Moment();
+    };
+
     /**
      * Форматировать дату в строку
      *
-     * @param {moment|Date|String} date     Дата
+     * @param {Moment|Date|String} date     Дата
      * @param {String}             [format] Формат
      * @returns {String}
      */
     MomentUtils.prototype.formatDate = function (date, format) {
         if (!date) { return ''; }
 
-        if (!moment.isMoment(date)) {
+        if (!Moment.isMoment(date)) {
             date = this.parseDate(date);
         }
         return date ? date.format(format ? format : DATE_FORMAT) : '';
@@ -30,14 +34,14 @@
     /**
      * Форматировать время в строку
      *
-     * @param {moment|Date|String} time     Время
+     * @param {Moment|Date|String} time     Время
      * @param {String}             [format] Формат
      * @returns {String}
      */
     MomentUtils.prototype.formatTime = function (time, format) {
         if (!time) { return ''; }
 
-        if (!moment.isMoment(time)) {
+        if (!Moment.isMoment(time)) {
             time = this.parseTime(time);
         }
         return time ? time.format(format ? format : TIME_FORMAT) : '';
@@ -46,14 +50,14 @@
     /**
      * Форматировать дату и время в строку
      *
-     * @param {moment|Date|String} dateTime Дата и время
+     * @param {Moment|Date|String} dateTime Дата и время
      * @param {String}             [format] Формат
      * @returns {String}
      */
     MomentUtils.prototype.formatDateTime = function (dateTime, format) {
         if (!dateTime) { return ''; }
 
-        if (!moment.isMoment(dateTime)) {
+        if (!Moment.isMoment(dateTime)) {
             dateTime = this.parseDateTime(dateTime);
         }
         return dateTime ? dateTime.format(format ? format : DATETIME_FORMAT) : '';
@@ -63,11 +67,11 @@
      * Создать moment на основе переданной даты
      *
      * @param {Date} date Дата
-     * @returns {moment|undefined}
+     * @returns {Moment|undefined}
      */
     MomentUtils.prototype.fromDate = function (date) {
         if (date) {
-            return moment(date);
+            return Moment(date);
         }
     };
 
@@ -76,14 +80,14 @@
      *
      * @param {Date|String} dateStr  Дата
      * @param {String}      [format] Формат даты
-     * @returns {moment|undefined}
+     * @returns {Moment|undefined}
      */
     MomentUtils.prototype.parseDate = function (dateStr, format) {
         if (dateStr) {
-            if (moment.isDate(dateStr)) {
+            if (Moment.isDate(dateStr)) {
                 return this.fromDate(dateStr);
             }
-            return moment(dateStr, format || DATE_FORMAT);
+            return Moment(dateStr, format || DATE_FORMAT);
         }
     };
 
@@ -92,14 +96,14 @@
      *
      * @param {Date|String} timeStr  Время
      * @param {String}      [format] Формат времени
-     * @returns {moment|undefined}
+     * @returns {Moment|undefined}
      */
     MomentUtils.prototype.parseTime = function (timeStr, format) {
         if (timeStr) {
-            if (moment.isDate(timeStr)) {
+            if (Moment.isDate(timeStr)) {
                 return this.fromDate(timeStr);
             }
-            return moment(timeStr, format || TIME_FORMAT);
+            return Moment(timeStr, format || TIME_FORMAT);
         }
     };
 
@@ -108,14 +112,14 @@
      *
      * @param {Date|String} dateTimeStr Дата и время
      * @param {String}      [format]    Формат даты и времени
-     * @returns {moment|undefined}
+     * @returns {Moment|undefined}
      */
     MomentUtils.prototype.parseDateTime = function (dateTimeStr, format) {
         if (dateTimeStr) {
-            if (moment.isDate(dateTimeStr)) {
+            if (Moment.isDate(dateTimeStr)) {
                 return this.fromDate(dateTimeStr);
             }
-            return moment(dateTimeStr, format || DATETIME_FORMAT);
+            return Moment(dateTimeStr, format || DATETIME_FORMAT);
         }
     };
 })();

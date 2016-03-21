@@ -3,9 +3,17 @@
 
     var assert = require('assert');
 
+    var moment = require('moment');
     var MomentUtils = require('../../app/utils/momentUtils');
 
     describe('momentUtils', function () {
+        it('.now', function () {
+            var now = MomentUtils.now(),
+                now2 = moment();
+
+            assert(MomentUtils.formatDateTime(now) === MomentUtils.formatDateTime(now2));
+        });
+
         it('parseDate', function () {
             var date;
 
