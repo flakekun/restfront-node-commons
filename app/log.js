@@ -2,11 +2,29 @@
     'use strict';
 
     var fs = require('fs');
+    var util = require('util');
     var moment = require('moment');
     var winston = require('winston');
-    var expressWinston = require('express-winston');
+    var winstonDailyRotateFile = require('winston-daily-rotate-file');
+    var morgan = require('morgan');
 
-    module.exports = new Log();
+    var log = new Log();
+
+    var methods = [
+        'silly',
+        'debug',
+        'verbose',
+        'info',
+        'warn',
+        'error'
+    ];
+    methods.forEach(function (method) {
+        log[method] = function () {
+            return log.logger[method].apply(log.logger, arguments);
+        };
+    });
+
+    module.exports = log;
 
     var _logPath = '',
         _logFilePrefix = 'app';
@@ -17,11 +35,11 @@
      * @augments winston
      */
     function Log() {
-        this.logger = new winston.Logger();
-        // Расширяем объект методами из winston
-        this.logger.extend(this);
+        this.logger = new (winston.Logger)({
+            transports: []
+        });
 
-        setupAppConsoleLog(this);
+        setupAppConsoleLog(this.logger);
     }
 
     /**
@@ -34,29 +52,20 @@
         _logPath = (logPath) ? logPath + '/' : './';
         _logFilePrefix = filePrefix || 'app';
 
-        preparePath();
-        setupAppFileLog(this);
+        preparePath(_logPath);
+        setupAppFileLog(this.logger);
     };
 
     /**
      * Настройка лога запросов
-     * @returns {expressWinston.logger}
+     * @returns {morgan}
      */
     Log.prototype.createRequestLog = function () {
-        return expressWinston.logger({
-            transports: [
-                new winston.transports.DailyRotateFile({
-                    name: 'request-daily',
-                    filename: _logPath + 'request',
-                    datePattern: '_yyyy-MM-dd.log',
-                    level: 'info',
-                    json: false,
-                    formatter: requestFormatter
-                })
-            ],
-            msg: '{{res.statusCode}} {{req.method}} "{{req.url}}" - {{res._headers["content-length"]}} - {{res.responseTime}} ms',
-            meta: false,
-            statusLevels: true
+        var logger = new winston.Logger();
+        setupRequestLog(logger);
+
+        return morgan('combined', {
+            stream: logger.stream
         });
     };
 
@@ -73,17 +82,6 @@
     };
 
     /**
-     * Записать в лог сообщение об ошибке, только если передана ошибка
-     *
-     * @param [e] Ошибка
-     */
-    Log.prototype.logIfError = function (e) {
-        if (e) {
-            this.error(prepareErrorMessage(e));
-        }
-    };
-
-    /**
      * Записать в лог сообщение об ошибке и перебросить исключение
      *
      * @param {String} caption Заголовок сообщения об ошибке
@@ -93,6 +91,17 @@
         var message = prepareErrorMessage(e);
         this.error('%s: %s', caption, message);
         throw e;
+    };
+
+    /**
+     * Записать в лог сообщение об ошибке, только если передана ошибка
+     *
+     * @param [e] Ошибка
+     */
+    Log.prototype.logIfError = function (e) {
+        if (e) {
+            this.error(prepareErrorMessage(e));
+        }
     };
 
     function prepareErrorMessage(e) {
@@ -108,9 +117,9 @@
         return message;
     }
 
-    function preparePath() {
+    function preparePath(path) {
         try {
-            fs.mkdirSync(_logPath);
+            fs.mkdirSync(path);
         } catch (e) {
             if (e.code !== 'EEXIST') {
                 throw e;
@@ -121,15 +130,15 @@
     /**
      * Лог в консоль
      */
-    function setupAppConsoleLog(obj) {
+    function setupAppConsoleLog(logger) {
         var loggerName = 'app-daily-console';
 
         // Удаляем текущий транспорт
-        if (obj.logger.transports[loggerName]) {
-            obj.logger.remove(loggerName);
+        if (logger.transports[loggerName]) {
+            logger.remove(loggerName);
         }
 
-        obj.logger.add(winston.transports.Console, {
+        logger.add(winston.transports.Console, {
             name: loggerName,
             level: 'info',
             handleExceptions: true,
@@ -140,16 +149,16 @@
     /**
      * Лог в файл
      */
-    function setupAppFileLog(obj) {
+    function setupAppFileLog(logger) {
         var loggerName = 'app-daily-file';
 
         // Удаляем текущий транспорт
-        if (obj.logger.transports[loggerName]) {
-            obj.logger.remove(loggerName);
+        if (logger.transports[loggerName]) {
+            logger.remove(loggerName);
         }
 
         // Лог в файл
-        obj.logger.add(winston.transports.DailyRotateFile, {
+        logger.add(winstonDailyRotateFile, {
             name: loggerName,
             filename: _logPath + _logFilePrefix,
             datePattern: '_yyyy-MM-dd.log',
@@ -160,12 +169,50 @@
         });
     }
 
+    /**
+     * Лог запросов в файл
+     */
+    function setupRequestLog(logger) {
+        var loggerName = 'request-daily-file';
+
+        // Удаляем текущий транспорт
+        if (logger.transports[loggerName]) {
+            logger.remove(loggerName);
+        }
+
+        // Лог в файл
+        logger.add(winstonDailyRotateFile, {
+            name: loggerName,
+            filename: _logPath + 'request',
+            datePattern: '_yyyy-MM-dd.log',
+            level: 'info',
+            json: false,
+            formatter: requestFormatter
+        });
+    }
 
     function appFormatter(options) {
-        return options.level.toUpperCase() + ' [' + moment().format('YYYY-MM-DD HH:mm:ss') + '] ' + (undefined !== options.message ? options.message : '');
+        var output = options.level.toUpperCase() + ' ';
+        output += timestamp() + ' ';
+        output += (options.message || '');
+
+        var meta = options.meta;
+        if (meta && Object.keys(meta).length > 0) {
+            if (Array.isArray(meta.stack)) {
+                output += '\n' + meta.stack.join('\n');
+            } else {
+                output += '\n' + util.inspect(meta);
+            }
+        }
+
+        return output;
     }
 
     function requestFormatter(options) {
-        return '[' + moment().format('YYYY-MM-DD HH:mm:ss') + '] ' + (undefined !== options.message ? options.message : '');
+        return timestamp() + ' ' + (options.message || '');
+    }
+
+    function timestamp() {
+        return '[' + moment().format('YYYY-MM-DD HH:mm:ss') + ']';
     }
 })();

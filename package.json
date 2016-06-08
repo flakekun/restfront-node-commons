@@ -1,48 +1,49 @@
 {
-    "name": "restfront-node-commons",
-    "version": "0.3.3",
-    "description": "",
-    "main": "index.js",
-    "scripts": {
-        "test": "mocha"
-    },
-    "author": "Restfront, Ltd",
-    "license": "proprietary",
-    "private": true,
-    "dependencies": {
-        "bluebird": "^2.9.34",
-        "express-jwt": "^3.0.0",
-        "express-winston": "^0.2.12",
-        "http-status": "^0.2.0",
-        "jsonwebtoken": "^5.0.0",
-        "lodash": "^4.0.0",
-        "moment": "^2.10.3",
-        "node-firebird": "restfront/node-firebird",
-        "winston": "^1.0.0"
-    },
-    "devDependencies": {
-        "bcrypt": "^0.8.3",
-        "mocha": "^2.2.1"
-    },
-    "jshintConfig": {
-        "bitwise": true,
-        "camelcase": true,
-        "curly": true,
-        "eqeqeq": true,
-        "eqnull": true,
-        "forin": true,
-        "immed": true,
-        "indent": 4,
-        "latedef": "nofunc",
-        "newcap": true,
-        "noarg": true,
-        "noempty": true,
-        "nonew": true,
-        "undef": true,
-        "unused": "vars",
-        "strict": true,
-        "browser": false,
-        "node": true,
-        "devel": true
-    }
+  "name": "restfront-node-commons",
+  "version": "0.3.3",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "Restfront, Ltd",
+  "license": "proprietary",
+  "private": true,
+  "dependencies": {
+    "bluebird": "^2.9.34",
+    "express-jwt": "^3.0.0",
+    "http-status": "^0.2.0",
+    "jsonwebtoken": "^5.0.0",
+    "lodash": "^4.0.0",
+    "moment": "^2.10.3",
+    "morgan": "1.7.0",
+    "node-firebird": "restfront/node-firebird",
+    "winston": "2.2.0",
+    "winston-daily-rotate-file": "1.1.1"
+  },
+  "devDependencies": {
+    "bcrypt": "^0.8.3",
+    "mocha": "^2.2.1"
+  },
+  "jshintConfig": {
+    "bitwise": true,
+    "camelcase": true,
+    "curly": true,
+    "eqeqeq": true,
+    "eqnull": true,
+    "forin": true,
+    "immed": true,
+    "indent": 4,
+    "latedef": "nofunc",
+    "newcap": true,
+    "noarg": true,
+    "noempty": true,
+    "nonew": true,
+    "undef": true,
+    "unused": "vars",
+    "strict": true,
+    "browser": false,
+    "node": true,
+    "devel": true
+  }
 }
