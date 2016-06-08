@@ -64,8 +64,13 @@
         var logger = new winston.Logger();
         setupRequestLog(logger);
 
-        return morgan('combined', {
-            stream: logger.stream
+        var format = ':remote-addr ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent" :response-time';
+        return morgan(format, {
+            stream: {
+                write: function(message, encoding) {
+                    logger.info((message || '').trim());
+                }
+            }
         });
     };
 
@@ -173,16 +178,16 @@
      * Лог запросов в файл
      */
     function setupRequestLog(logger) {
-        var loggerName = 'request-daily-file';
-
-        // Удаляем текущий транспорт
-        if (logger.transports[loggerName]) {
-            logger.remove(loggerName);
-        }
+        logger.add(winston.transports.Console, {
+            name: 'request-console',
+            level: 'info',
+            handleExceptions: true,
+            formatter: requestFormatter
+        });
 
         // Лог в файл
         logger.add(winstonDailyRotateFile, {
-            name: loggerName,
+            name: 'request-daily-file',
             filename: _logPath + 'request',
             datePattern: '_yyyy-MM-dd.log',
             level: 'info',
