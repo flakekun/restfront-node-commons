@@ -44,14 +44,22 @@
     /**
      * Создать функцию-преобразователь результата БД запроса для получения массива объектов
      *
-     * @param {Function} [Constructor] Функция-конструктор
+     * @param {Function} [factory] Функция-конструктор
      * @returns {Function<Array>}
      */
-    DataUtils.prototype.prepareArrayMapper = function (Constructor) {
+    DataUtils.prototype.prepareArrayMapper = function (factory) {
         return function (result) {
             if (Array.isArray(result)) {
                 return result.map(function (data) {
-                    return Constructor ? new Constructor(data) : data;
+                    if (!factory) {
+                        return data;
+                    }
+
+                    if (factory.prototype) {
+                        return new factory(data);
+                    }
+
+                    return factory(data);
                 });
             }
         };
@@ -60,13 +68,21 @@
     /**
      * Создать функцию-преобразователь результата БД запроса для получения одного объекта
      *
-     * @param {Function} [Constructor] Функция-конструктор
+     * @param {Function} [factory] Функция-конструктор
      * @returns {Function<Object>}
      */
-    DataUtils.prototype.prepareObjectMapper = function (Constructor) {
+    DataUtils.prototype.prepareObjectMapper = function (factory) {
         return function (result) {
             if (result && result.length > 0) {
-                return Constructor ? new Constructor(result[0]) : result[0];
+                if (!factory) {
+                    return result[0];
+                }
+
+                if (factory.prototype) {
+                    return new factory(result[0]);
+                }
+
+                return factory(result[0]);
             }
         };
     };

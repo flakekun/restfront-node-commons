@@ -619,9 +619,8 @@
                     return Promise.resolve().then(function () {
                         return connection.metadata.getServerVersion().then(function (version) {
                             assert.notEqual(version);
-                            assert.equal(version.major, 2, 'Invalid MAJOR server version');
-                            assert.equal(version.minor, 5, 'Invalid MINOR server version');
-                            assert.equal(version.patch, 3, 'Invalid PATCH server version');
+                            assert(version.major > 0, 'Invalid MAJOR server version');
+                            assert(version.minor > 0, 'Invalid MINOR server version');
                         });
                     });
                 })
