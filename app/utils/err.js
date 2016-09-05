@@ -7,9 +7,24 @@
 
     function Err() { }
 
+    Err.prototype.ServerError = ServerError;
     Err.prototype.UnauthorizedError = UnauthorizedError;
     Err.prototype.NotFoundError = NotFoundError;
     Err.prototype.NotAcceptableError = NotAcceptableError;
+
+    /**
+     * HTTP 500 Internal Server Error
+     * @param message
+     * @constructor
+     */
+    function ServerError(message) {
+        this.message = message;
+        this.stack = (new Error()).stack;
+        this.status = HTTPStatus.INTERNAL_SERVER_ERROR;
+        this.name = HTTPStatus[this.status];
+    }
+    ServerError.prototype = Object.create(Error.prototype);
+    ServerError.prototype.constructor = ServerError;
 
     /**
      * HTTP 401 Unauthorized
@@ -17,10 +32,10 @@
      * @constructor
      */
     function UnauthorizedError(message) {
-        this.name = 'UnauthorizedError';
         this.message = message;
         this.stack = (new Error()).stack;
         this.status = HTTPStatus.UNAUTHORIZED;
+        this.name = HTTPStatus[this.status];
     }
 
     UnauthorizedError.prototype = Object.create(Error.prototype);
@@ -32,25 +47,25 @@
      * @constructor
      */
     function NotFoundError(message) {
-        this.name = 'NotFoundError';
         this.message = message;
         this.stack = (new Error()).stack;
         this.status = HTTPStatus.NOT_FOUND;
+        this.name = HTTPStatus[this.status];
     }
 
     NotFoundError.prototype = Object.create(Error.prototype);
     NotFoundError.prototype.constructor = NotFoundError;
 
     /**
-     * HTTP 409 Not Acceptable
+     * HTTP 406 Not Acceptable
      * @param message
      * @constructor
      */
     function NotAcceptableError(message) {
-        this.name = 'NotAcceptableError';
         this.message = message;
         this.stack = (new Error()).stack;
         this.status = HTTPStatus.NOT_ACCEPTABLE;
+        this.name = HTTPStatus[this.status];
     }
 
     NotAcceptableError.prototype = Object.create(Error.prototype);
