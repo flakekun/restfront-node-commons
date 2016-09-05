@@ -7,10 +7,25 @@
 
     function Err() { }
 
+    Err.prototype.BadRequest = BadRequest;
     Err.prototype.ServerError = ServerError;
     Err.prototype.UnauthorizedError = UnauthorizedError;
     Err.prototype.NotFoundError = NotFoundError;
     Err.prototype.NotAcceptableError = NotAcceptableError;
+
+    /**
+     * HTTP 400 Bad Request
+     * @param message
+     * @constructor
+     */
+    function BadRequest(message) {
+        this.message = message;
+        this.stack = (new Error()).stack;
+        this.status = HTTPStatus.BAD_REQUEST;
+        this.name = HTTPStatus[this.status];
+    }
+    BadRequest.prototype = Object.create(Error.prototype);
+    BadRequest.prototype.constructor = BadRequest;
 
     /**
      * HTTP 500 Internal Server Error
