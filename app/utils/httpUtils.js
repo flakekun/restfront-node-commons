@@ -91,7 +91,7 @@
     function prepareForResponse(data) {
         if (data) {
             if (Array.isArray(data)) {
-                _.invoke(data, 'prepareForResponse');
+                _.invokeMap(data, 'prepareForResponse');
             } else if (data.prepareForResponse) {
                 data.prepareForResponse();
             }
