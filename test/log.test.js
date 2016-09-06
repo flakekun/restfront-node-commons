@@ -2,12 +2,11 @@
 (function () {
     'use strict';
 
-    var assert = require('assert');
     var log = require('../app/log');
 
     describe('log', function () {
         before(function() {
-            log.init('./log', 'test');
+            log.initFileLog('./log', 'test');
         });
 
         it('should log', function () {
