@@ -38,6 +38,22 @@
     }
 
     /**
+     * Создать БД с данными соединения
+     *
+     * @promise {Connection}
+     */
+    Connection.prototype.create = function () {
+        var self = this;
+        utils.updateLastActive(self);
+
+        return Promise.promisify(FBDriver.create.bind(FBDriver))(self.options)
+            .then(function(db) {
+                self.database = db;
+                return self;
+            });
+    };
+
+    /**
      * Открыть соединение с БД
      *
      * @promise {Connection}
