@@ -24,12 +24,13 @@
         this.options.password = password;
 
         this.pool = FBDriver.pool(maxConnections, this.options);
+        this._get = Promise.promisify(this.pool.get, {context: this.pool});
     }
 
     Pool.prototype.getConnection = function () {
         var self = this;
 
-        return Promise.promisify(self.pool.get.bind(self.pool))()
+        return this._get()
             .then(function (db) {
                 var connection = new Connection(self.options.url, self.options.user, self.options.password);
                 connection.database = db;

@@ -20,13 +20,15 @@
         if (Array.isArray(propNames)) {
             for (var i = 0; i < propNames.length; i++) {
                 var propName = propNames[i];
+
                 if (object[propName] != null) {
                     return object[propName];
                 }
-
-                propName = propName.toLowerCase();
-                if (object[propName] != null) {
-                    return object[propName];
+                if (object[propName.toLowerCase()] != null) {
+                    return object[propName.toLowerCase()];
+                }
+                if (object[propName.toUpperCase()] != null) {
+                    return object[propName.toUpperCase()];
                 }
             }
         } else if (_.isString(propNames)) {
@@ -35,6 +37,9 @@
             }
             if (object[propNames.toLowerCase()] != null) {
                 return object[propNames.toLowerCase()];
+            }
+            if (object[propNames.toUpperCase()] != null) {
+                return object[propNames.toUpperCase()];
             }
         }
 
