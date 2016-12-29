@@ -1,4 +1,4 @@
-(function() {
+(function () {
     'use strict';
 
     var Promise = require('bluebird');
@@ -47,7 +47,7 @@
         utils.updateLastActive(self);
 
         return Promise.promisify(FBDriver.create.bind(FBDriver))(self.options)
-            .then(function(db) {
+            .then(function (db) {
                 self.database = db;
                 return self;
             });
@@ -63,7 +63,7 @@
         utils.updateLastActive(self);
 
         return Promise.promisify(FBDriver.attach.bind(FBDriver))(self.options)
-            .then(function(db) {
+            .then(function (db) {
                 self.database = db;
                 return self;
             });
@@ -94,10 +94,10 @@
 
             Promise.resolve()
                 // Если была открыта читающая транзакция, то сначала откатим ее
-                .then(function() {
+                .then(function () {
                     if (self.readTransactionPromise) {
                         return self.readTransactionPromise
-                            .then(function(transaction) {
+                            .then(function (transaction) {
                                 return transaction.rollback();
                             });
                     }
@@ -226,11 +226,41 @@
                 // В случае ошибки откатим транзакцию и, одновременно, перебросим ошибку
                 .catch(function (e) {
                     return transaction.rollback()
-                        .finally(function() {
+                        .finally(function () {
                             throw e;
                         });
                 });
         });
+    };
+
+    /**
+     * Выполнить пишущие действия на основном соединении
+     * @param {Function<Promise>} action Действия
+     * @returns {Promise}
+     */
+    Connection.prototype.onWriteTransaction = function (action) {
+        return this.getWriteTransaction()
+            .then(function (transaction) {
+
+                // Выполним полезную работу
+                return action(transaction)
+
+                    // Коммит и возврат результата
+                    .then(function (actionResult) {
+                        return transaction.commit()
+                            .then(function () {
+                                return actionResult;
+                            });
+                    })
+
+                    // Роллбэк и проброс ошибки
+                    .catch(function (e) {
+                        return transaction.rollback()
+                            .then(function () {
+                                throw e;
+                            });
+                    });
+            });
     };
 
     /**
@@ -266,7 +296,7 @@
      * Сколько мс соединение простаивало
      * @returns {number}
      */
-    Connection.prototype.getInactiveTime = function() {
+    Connection.prototype.getInactiveTime = function () {
         return Date.now() - this.lastActive;
     };
 })();
