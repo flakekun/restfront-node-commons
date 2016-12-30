@@ -8,6 +8,7 @@
     var HttpUtils = require('./app/utils/httpUtils');
     var MomentUtils = require('./app/utils/momentUtils');
     var DataUtils = require('./app/utils/dataUtils');
+    var SqlUtils = require('./app/utils/sqlUtils');
     var Migrate = require('./app/migrate');
 
     module.exports = new Index();
@@ -69,4 +70,6 @@
      * @type {DataUtils}
      */
     Index.prototype.dataUtils = DataUtils;
+
+    Index.prototype.sqlUtils = SqlUtils;
 })();
