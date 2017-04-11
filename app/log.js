@@ -235,5 +235,6 @@
             return '';
         }
 
+        return '[pid: ' + cluster.worker.process.pid + ', id: ' + cluster.worker.id + '] ';
     }
 })();
