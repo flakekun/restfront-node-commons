@@ -7,6 +7,7 @@
     var winston = require('winston');
     var WinstonDailyRotateFile = require('winston-daily-rotate-file');
     var morgan = require('morgan');
+    var cluster = require('cluster');
 
     // Названия транспортов
     var LOGGER_APP_CONSOLE = 'app-console';
@@ -207,7 +208,7 @@
     }
 
     function appFormatter(options) {
-        var output = options.level.toUpperCase() + ' [' + formattedTimestamp() + '] ' + (options.message || '');
+        var output = options.level.toUpperCase() + ' [' + formattedTimestamp() + '] ' + workerMark() + (options.message || '');
 
         var meta = options.meta;
         if (meta && Object.keys(meta).length > 0) {
@@ -227,5 +228,12 @@
 
     function formattedTimestamp() {
         return moment().format('YYYY-MM-DD HH:mm:ss');
+    }
+
+    function workerMark() {
+        if (!cluster.isWorker) {
+            return '';
+        }
+
     }
 })();
