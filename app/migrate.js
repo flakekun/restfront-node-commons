@@ -1,25 +1,24 @@
 (function () {
     'use strict';
 
-    var Promise = require('bluebird');
-    var _ = require('lodash');
-    var Log = require('./log');
+    const Promise = require('bluebird');
+    const _ = require('lodash');
 
-    module.exports = new Migrate();
+    const Log = require('./log');
 
-    function Migrate() { }
+    module.exports = {
+        run
+    };
 
-    Migrate.prototype.run = function (connection, migration) {
+    function run(connection, migration) {
         // Проверяем правильность миграции
         return Promise.method(validateMigration)(migration)
 
             // Проверяем необходимость миграции
-            .then(function () {
-                return connection.migration.check(migration.data.id);
-            })
+            .then(() => connection.migration.check(migration.data.project, migration.data.id))
 
             // Если необходимо - проводим миграцию
-            .then(function (exists) {
+            .then((exists) => {
                 if (exists) {
                     return;
                 }
@@ -27,34 +26,22 @@
                 Log.info('Миграция %d "%s"', migration.data.id, migration.data.name);
 
                 // Откроем пишущую транзакцию
-                return connection.getWriteTransaction()
-                    .then(function (tr) {
+                return connection.onWriteTransaction((tr) => {
 
-                        // Выполняем миграцию на пишущей транзакции
-                        return migration.action(connection, tr)
+                    // Выполняем миграцию на пишущей транзакции
+                    return migration.action(connection, tr)
 
-                            // Сохраним информацию о проведенной миграции
-                            .then(function () {
-                                return connection.migration.log(tr, migration.data.id, migration.data.name, migration.data.date, migration.data.author);
-                            })
-
-                            // Коммитим транзакцию
-                            .then(tr.commit.bind(tr))
-
-                            // При ошибке откатим транзакцию и перебросим исключение выше
-                            .catch(function (e) {
-                                tr.rollback();
-                                throw e;
-                            });
-                    });
+                        // Сохраним информацию о проведенной миграции
+                        .then(() => connection.migration.log(tr, migration.data.project, migration.data.id, migration.data.name, migration.data.date, migration.data.author));
+                });
             })
 
             // Обработка исключений в миграции
-            .catch(function (e) {
+            .catch((e) => {
                 Log.error('Ошибка при выполнении миграции %d "%s": \n', migration.id, migration.name, e);
                 throw e;
             });
-    };
+    }
 
     function validateMigration(migration) {
         if (!_.isObject(migration.data) || !_.isFunction(migration.action)) {

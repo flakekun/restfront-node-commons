@@ -1,6 +1,6 @@
 {
   "name": "restfront-node-commons",
-  "version": "0.3.15",
+  "version": "0.4.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -12,6 +12,7 @@
   "dependencies": {
     "bluebird": "3.4.6",
     "express-jwt": "3.4.0",
+    "generic-pool": "3.1.7",
     "http-status": "0.2.3",
     "jsonwebtoken": "7.1.9",
     "lodash": "4.15.0",
@@ -44,6 +45,7 @@
     "strict": true,
     "browser": false,
     "node": true,
-    "devel": true
+    "devel": true,
+    "esnext": true
   }
 }
