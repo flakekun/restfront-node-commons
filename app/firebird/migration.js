@@ -1,6 +1,7 @@
 (function () {
     'use strict';
 
+    const Log = require('../log');
     const MomentUtils = require('../utils/momentUtils');
 
     /**
@@ -106,7 +107,8 @@
 
                     return transaction.query(tableSql)
                         .then(() => transaction.query(`ALTER TABLE rf_migration ADD CONSTRAINT rf_pk_migration PRIMARY KEY (id)`));
-                });
+                })
+                    .catch((e) => Log.logAndRethrow('Ошибка при обновлении метаданных миграций 01', e));
             });
     }
 
@@ -127,10 +129,11 @@
                 return connection.onWriteTransaction((transaction) => {
                     return Promise.resolve()
                         .then(() => transaction.query(`ALTER TABLE rf_migration DROP CONSTRAINT rf_pk_migration`))
-                        .then(() => transaction.query(`ALTER TABLE rf_migration ADD project VARCHAR(255) DEFAULT '' NOT NULL`))
-                        .then(() => transaction.query(`UPDATE rf_migration SET project = ''`))
-                        .then(() => transaction.query(`ALTER TABLE rf_migration ADD CONSTRAINT rf_pk_migration PRIMARY KEY (project, id)`));
-                });
+                        .then(() => transaction.query(`ALTER TABLE rf_migration ADD project VARCHAR(255) DEFAULT '' NOT NULL`));
+                })
+                    .then(() => connection.onWriteTransaction((transaction) => transaction.query(`UPDATE rf_migration SET project = ''`)))
+                    .then(() => connection.onWriteTransaction((transaction) => transaction.query(`ALTER TABLE rf_migration ADD CONSTRAINT rf_pk_migration PRIMARY KEY (project, id)`)))
+                    .catch((e) => Log.logAndRethrow('Ошибка при обновлении метаданных миграций 02', e));
             });
     }
 
