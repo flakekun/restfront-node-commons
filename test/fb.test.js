@@ -657,31 +657,25 @@
         });
 
         it('check log && insert log', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
-                .then(function () {
-                    return connection.migration.check(1)
-                        .then(function (exists) {
-                            assert(!exists, 'Found non existing migration');
-                        });
+                .then(() => connection.migration.check('', 1))
+                .then((exists) => {
+                    assert(!exists, 'Found non existing migration');
                 })
-                .then(function () {
-                    return connection.getWriteTransaction()
-                        .then(function (tr) {
-                            return connection.migration.log(tr, 1, 'migration', null, 'author')
-                                .then(tr.commit.bind(tr));
-                        });
+
+                .then(() => connection.getWriteTransaction())
+                .then((tr) => {
+                    return connection.migration.log(tr, '', 1, 'migration', null, 'author')
+                        .then(() => tr.commit());
                 })
-                .then(function () {
-                    return connection.migration.check(1)
-                        .then(function (exists) {
-                            assert(exists, 'Not found existing migration');
-                        });
+
+                .then(() => connection.migration.check('', 1))
+                .then((exists) => {
+                    assert(exists, 'Not found existing migration');
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
