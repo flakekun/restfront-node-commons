@@ -1,13 +1,19 @@
 (function () {
     'use strict';
 
-    var _ = require('lodash');
-    var HTTPStatus = require('http-status');
-    var Log = require('../log');
+    const _ = require('lodash');
+    const HTTPStatus = require('http-status');
 
-    module.exports = new HttpUtils();
+    const Log = require('../log');
 
-    function HttpUtils() {}
+    module.exports = {
+        respondSuccess,
+        respondError,
+        respondUnauthorized,
+
+        createSuccessResponse,
+        createErrorResponse
+    };
 
     /**
      * Закончить http запрос успешным ответом
@@ -15,14 +21,14 @@
      * @param res  {ServerResponse} HTTP ответ
      * @param data {Object|Array}   Данные для ответа
      */
-    HttpUtils.prototype.respondSuccess = function (res, data) {
+    function respondSuccess(res, data) {
         // Подготовим данные к ответу на клиент
         prepareForResponse(data);
 
         res
             .status(HTTPStatus.OK)
             .json(data);
-    };
+    }
 
     /**
      * Закончить http запрос ошибочным ответом
@@ -30,11 +36,11 @@
      * @param res   {ServerResponse} HTTP ответ
      * @param error {Error|String}   Ошибка
      */
-    HttpUtils.prototype.respondError = function (res, error) {
+    function respondError(res, error) {
         // Определяем данные ошибки
-        var status = (error && error.status) ? error.status : HTTPStatus.INTERNAL_SERVER_ERROR;
-        var name = (error && error.name) ? error.name : HTTPStatus[HTTPStatus.INTERNAL_SERVER_ERROR];
-        var message = (error) ? error.message || error : '';
+        const status = (error && error.status) ? error.status : HTTPStatus.INTERNAL_SERVER_ERROR;
+        const name = (error && error.name) ? error.name : HTTPStatus[HTTPStatus.INTERNAL_SERVER_ERROR];
+        const message = (error) ? error.message || error : '';
 
         // Запишем предупреждение в лог приложения
         Log.warn(message);
@@ -53,9 +59,9 @@
             error: name,
             message: message
         });
-    };
+    }
 
-    HttpUtils.prototype.respondUnauthorized = function (res, message) {
+    function respondUnauthorized(res, message) {
         res
             .status(HTTPStatus.UNAUTHORIZED)
             .set('WWW-Authenticate', 'Basic realm="RestFront"')
@@ -64,22 +70,22 @@
                 error: HTTPStatus[HTTPStatus.UNAUTHORIZED],
                 message: message || ''
             });
-    };
+    }
 
-    HttpUtils.prototype.createSuccessResponse = function (res, actualResult) {
+    function createSuccessResponse(res, actualResult) {
         return function (result) {
             if (actualResult) {
                 result = actualResult;
             }
-            this.respondSuccess(res, result);
-        }.bind(this);
-    };
+            respondSuccess(res, result);
+        };
+    }
 
-    HttpUtils.prototype.createErrorResponse = function (res) {
+    function createErrorResponse(res) {
         return function (error) {
-            this.respondError(res, error);
-        }.bind(this);
-    };
+            respondError(res, error);
+        };
+    }
 
     /**
      * Для объекта данных или для каждого объекта из массива данных вызовем метод prepareForResponse,

@@ -1,11 +1,19 @@
 (function() {
     'use strict';
 
-    var _ = require('lodash');
+    const _ = require('lodash');
 
-    module.exports = new DataUtils();
+    module.exports = {
+        get: get,
 
-    function DataUtils() {}
+        prepareArrayMapper,
+        prepareObjectMapper,
+
+        isValidKey,
+        validKeyOrNull,
+        parseKey,
+        filterKeys
+    };
 
     /**
      * Получить значение свойства из объекта, без учета чувствительности к регистру,
@@ -16,10 +24,10 @@
      * @param {*}                    [defaultValue] Значение по умолчанию
      * @returns {*} Значение свойства
      */
-    DataUtils.prototype.get = function(object, propNames, defaultValue) {
+    function get(object, propNames, defaultValue) {
         if (Array.isArray(propNames)) {
-            for (var i = 0; i < propNames.length; i++) {
-                var propName = propNames[i];
+            for (let i = 0; i < propNames.length; i++) {
+                const propName = propNames[i];
 
                 if (object[propName] != null) {
                     return object[propName];
@@ -44,7 +52,7 @@
         }
 
         return defaultValue;
-    };
+    }
 
     /**
      * Создать функцию-преобразователь результата БД запроса для получения массива объектов
@@ -52,10 +60,10 @@
      * @param {Function} [factory] Функция-конструктор
      * @returns {Function<Array>}
      */
-    DataUtils.prototype.prepareArrayMapper = function (factory) {
+    function prepareArrayMapper(factory) {
         return function (result) {
             if (Array.isArray(result)) {
-                return result.map(function (data) {
+                return result.map((data) => {
                     if (!factory) {
                         return data;
                     }
@@ -68,7 +76,7 @@
                 });
             }
         };
-    };
+    }
 
     /**
      * Создать функцию-преобразователь результата БД запроса для получения одного объекта
@@ -76,7 +84,7 @@
      * @param {Function} [factory] Функция-конструктор
      * @returns {Function<Object>}
      */
-    DataUtils.prototype.prepareObjectMapper = function (factory) {
+    function prepareObjectMapper(factory) {
         return function (result) {
             if (result && result.length > 0) {
                 if (!factory) {
@@ -90,7 +98,7 @@
                 return factory(result[0]);
             }
         };
-    };
+    }
 
     /**
      * Подходит ли значение под ключ в БД
@@ -98,9 +106,9 @@
      * @param {number} value Значение
      * @returns {boolean}
      */
-    DataUtils.prototype.isValidKey = function (value) {
+    function isValidKey(value) {
         return value > 0;
-    };
+    }
 
     /**
      * Возвращаем ключ, если он валиден, иначе null
@@ -108,9 +116,9 @@
      * @param {number} value Значение
      * @returns {Number|null}
      */
-    DataUtils.prototype.validKeyOrNull = function (value) {
-        return this.isValidKey(value) ? value : null;
-    };
+    function validKeyOrNull(value) {
+        return isValidKey(value) ? value : null;
+    }
 
 
     /**
@@ -119,10 +127,10 @@
      * @param {number} value Значение
      * @returns {number}
      */
-    DataUtils.prototype.parseKey = function (value) {
+    function parseKey(value) {
         value = Number(value);
-        return this.isValidKey(value) ? value : -1;
-    };
+        return isValidKey(value) ? value : -1;
+    }
 
     /**
      * Подготовка массива ключей: преобразование в числа, удаление дубликатов, удаление не ключей
@@ -130,25 +138,19 @@
      * @param {Array} array Массив необработанных данных
      * @returns {Array<number>} Массив ключей
      */
-    DataUtils.prototype.filterKeys = function (array) {
-        var self = this;
-
+    function filterKeys(array) {
         if (!Array.isArray(array)) {
             throw new Error('Not an array');
         }
 
         // Преобразование и фильтрация
         array = array
-            .map(function (element) {
-                return Number(element);
-            })
-            .filter(function (element) {
-                return self.isValidKey(element);
-            });
+            .map((element) => Number(element))
+            .filter((element) => isValidKey(element));
 
         // Удаление дубликатов
         array = _.uniq(array);
 
         return array;
-    };
+    }
 })();

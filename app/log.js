@@ -1,26 +1,27 @@
 (function () {
     'use strict';
 
-    var fs = require('fs');
-    var util = require('util');
-    var moment = require('moment');
-    var winston = require('winston');
-    var WinstonDailyRotateFile = require('winston-daily-rotate-file');
-    var morgan = require('morgan');
-    var cluster = require('cluster');
+    const fs = require('fs');
+    const util = require('util');
+    const moment = require('moment');
+    const winston = require('winston');
+    const WinstonDailyRotateFile = require('winston-daily-rotate-file');
+    const morgan = require('morgan');
+    const cluster = require('cluster');
 
     // Названия транспортов
-    var LOGGER_APP_CONSOLE = 'app-console';
-    var LOGGER_APP_FILE = 'app-daily-file';
-    var LOGGER_REQUEST_CONSOLE = 'request-console';
-    var LOGGER_REQUEST_FILE = 'request-daily-file';
+    const
+        LOGGER_APP_CONSOLE = 'app-console',
+        LOGGER_APP_FILE = 'app-daily-file',
+        LOGGER_REQUEST_CONSOLE = 'request-console',
+        LOGGER_REQUEST_FILE = 'request-daily-file';
 
     // Настройки файлового лога
-    var _logPath = '',
+    let _logPath = '',
         _logFilePrefix = 'app';
 
     // winston логгер
-    var winstonLogger = new (winston.Logger)({
+    const winstonLogger = new (winston.Logger)({
         exitOnError: true,
 
         transports: [
@@ -42,14 +43,14 @@
          * @param {String} logPath          Путь к папке логов
          * @param {String} [filePrefix=app] Префикс файлов лога
          */
-        initFileLog: initFileLog,
+        initFileLog,
         init: initFileLog,
 
         /**
          * Настройка лога запросов
          * @returns {morgan}
          */
-        createRequestLog: createRequestLog,
+        createRequestLog,
 
         /**
          * Создать функтор из метода logAndRethrow
@@ -57,7 +58,7 @@
          * @param {String} caption Заголовок сообщения об ошибке
          * @returns {function} Функтор
          */
-        createLogAndRethrow: createLogAndRethrow,
+        createLogAndRethrow,
 
         /**
          * Записать в лог сообщение об ошибке и перебросить исключение
@@ -65,18 +66,18 @@
          * @param {String} caption Заголовок сообщения об ошибке
          * @param error Ошибка
          */
-        logAndRethrow: logAndRethrow,
+        logAndRethrow,
 
         /**
          * Записать в лог сообщение об ошибке, только если передана ошибка
          *
          * @param [error] Ошибка
          */
-        logIfError: logIfError
+        logIfError
     };
 
     // Проксируем вызовы функций лога на winston логгер
-    ['silly', 'debug', 'verbose', 'info', 'warn', 'error'].forEach(function (method) {
+    ['silly', 'debug', 'verbose', 'info', 'warn', 'error'].forEach((method) => {
         module.exports[method] = function () {
             return winstonLogger[method].apply(winstonLogger, arguments);
         };
@@ -118,7 +119,7 @@
      * @returns {morgan}
      */
     function createRequestLog() {
-        var requestLogger = new winston.Logger({
+        const requestLogger = new winston.Logger({
             level: 'info',
 
             transports: [
@@ -139,7 +140,7 @@
         });
 
         // Настраиваем morgan для использования winston лога
-        var format = ':remote-addr ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent" :response-time';
+        const format = ':remote-addr ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent" :response-time';
         return morgan(format, {
             stream: {
                 write: function (message, encoding) {
@@ -168,7 +169,7 @@
      * @param error Ошибка
      */
     function logAndRethrow(caption, error) {
-        var message = prepareErrorMessage(error);
+        const message = prepareErrorMessage(error);
         winstonLogger.error('%s: %s', caption, message);
         throw error;
     }
@@ -185,10 +186,10 @@
     }
 
     function prepareErrorMessage(error) {
-        var message = '';
+        let message = '';
         if (error) {
             message = message + error;
-            var stack = error.stack;
+            const stack = error.stack;
             if (stack) {
                 message = message + '\n' + stack;
             }
@@ -208,9 +209,9 @@
     }
 
     function appFormatter(options) {
-        var output = options.level.toUpperCase() + ' [' + formattedTimestamp() + '] ' + workerMark() + (options.message || '');
+        let output = options.level.toUpperCase() + ' [' + formattedTimestamp() + '] ' + workerMark() + (options.message || '');
 
-        var meta = options.meta;
+        const meta = options.meta;
         if (meta && Object.keys(meta).length > 0) {
             if (Array.isArray(meta.stack)) {
                 output += '\n' + meta.stack.join('\n');

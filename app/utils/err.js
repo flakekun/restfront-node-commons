@@ -1,88 +1,83 @@
 (function () {
     'use strict';
 
-    var HTTPStatus = require('http-status');
-
-    module.exports = new Err();
-
-    function Err() { }
-
-    Err.prototype.BadRequest = BadRequest;
-    Err.prototype.ServerError = ServerError;
-    Err.prototype.UnauthorizedError = UnauthorizedError;
-    Err.prototype.NotFoundError = NotFoundError;
-    Err.prototype.NotAcceptableError = NotAcceptableError;
+    const HTTPStatus = require('http-status');
 
     /**
      * HTTP 400 Bad Request
      * @param message
      * @constructor
      */
-    function BadRequest(message) {
-        this.message = message;
-        this.stack = (new Error()).stack;
-        this.status = HTTPStatus.BAD_REQUEST;
-        this.name = HTTPStatus[this.status];
+    class BadRequest extends Error {
+        constructor(message) {
+            super(message);
+            this.message = message;
+            this.status = HTTPStatus.BAD_REQUEST;
+            this.name = HTTPStatus[this.status];
+        }
     }
-    BadRequest.prototype = Object.create(Error.prototype);
-    BadRequest.prototype.constructor = BadRequest;
 
     /**
      * HTTP 500 Internal Server Error
      * @param message
      * @constructor
      */
-    function ServerError(message) {
-        this.message = message;
-        this.stack = (new Error()).stack;
-        this.status = HTTPStatus.INTERNAL_SERVER_ERROR;
-        this.name = HTTPStatus[this.status];
+    class ServerError extends Error {
+        constructor(message) {
+            super(message);
+            this.message = message;
+            this.status = HTTPStatus.INTERNAL_SERVER_ERROR;
+            this.name = HTTPStatus[this.status];
+        }
     }
-    ServerError.prototype = Object.create(Error.prototype);
-    ServerError.prototype.constructor = ServerError;
 
     /**
      * HTTP 401 Unauthorized
      * @param message
      * @constructor
      */
-    function UnauthorizedError(message) {
-        this.message = message;
-        this.stack = (new Error()).stack;
-        this.status = HTTPStatus.UNAUTHORIZED;
-        this.name = HTTPStatus[this.status];
+    class UnauthorizedError extends Error {
+        constructor(message) {
+            super(message);
+            this.message = message;
+            this.status = HTTPStatus.UNAUTHORIZED;
+            this.name = HTTPStatus[this.status];
+        }
     }
-
-    UnauthorizedError.prototype = Object.create(Error.prototype);
-    UnauthorizedError.prototype.constructor = UnauthorizedError;
 
     /**
      * HTTP 404 Not Found
      * @param message
      * @constructor
      */
-    function NotFoundError(message) {
-        this.message = message;
-        this.stack = (new Error()).stack;
-        this.status = HTTPStatus.NOT_FOUND;
-        this.name = HTTPStatus[this.status];
+    class NotFoundError extends Error {
+        constructor(message) {
+            super(message);
+            this.message = message;
+            this.status = HTTPStatus.NOT_FOUND;
+            this.name = HTTPStatus[this.status];
+        }
     }
-
-    NotFoundError.prototype = Object.create(Error.prototype);
-    NotFoundError.prototype.constructor = NotFoundError;
 
     /**
      * HTTP 406 Not Acceptable
      * @param message
      * @constructor
      */
-    function NotAcceptableError(message) {
-        this.message = message;
-        this.stack = (new Error()).stack;
-        this.status = HTTPStatus.NOT_ACCEPTABLE;
-        this.name = HTTPStatus[this.status];
+    class NotAcceptableError extends Error {
+        constructor(message) {
+            super(message);
+            this.message = message;
+            this.status = HTTPStatus.NOT_ACCEPTABLE;
+            this.name = HTTPStatus[this.status];
+        }
     }
 
-    NotAcceptableError.prototype = Object.create(Error.prototype);
-    NotAcceptableError.prototype.constructor = NotAcceptableError;
+    module.exports = {
+        BadRequest,
+        ServerError,
+        UnauthorizedError,
+        NotFoundError,
+        NotAcceptableError
+    };
 })();

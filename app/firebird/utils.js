@@ -1,9 +1,11 @@
 (function() {
     'use strict';
 
-    module.exports.parseUrl = parseUrl;
-    module.exports.updateLastActive = updateLastActive;
-    module.exports.parseServerVersion = parseServerVersion;
+    module.exports = {
+        parseUrl,
+        updateLastActive,
+        parseServerVersion
+    };
 
     /**
      * Разбор строки пути к БД
@@ -16,13 +18,13 @@
             return;
         }
 
-        var result = {
+        const result = {
             host: '',
             port: '',
             database: ''
         };
 
-        var hostNameEndIndex, portEndIndex;
+        let hostNameEndIndex, portEndIndex;
         hostNameEndIndex = url.indexOf(':');
         if (hostNameEndIndex > 1) {
             result.host = url.substr(0, hostNameEndIndex);
@@ -49,7 +51,7 @@
     }
 
     function parseServerVersion(versionStr) {
-        var versionParts = (versionStr || '').split('.');
+        const versionParts = (versionStr || '').split('.');
         return {
             major: versionParts.length > 0 ? versionParts[0] || 0 : 0,
             minor: versionParts.length > 1 ? versionParts[1] || 0 : 0,

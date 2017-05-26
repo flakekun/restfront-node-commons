@@ -1,13 +1,15 @@
+/* jshint expr: true, mocha:true */
 (function () {
     'use strict';
 
-    var assert = require('assert');
-    var Promise = require('bluebird');
+    const assert = require('assert');
+    const Promise = require('bluebird');
 
-    var fb = require('..').fb;
-    var FirebirdUtils = require('../app/firebird/utils');
+    const fb = require('..').fb;
+    const FirebirdUtils = require('../app/firebird/utils');
+    const DataUtils = require('../app/utils/dataUtils');
 
-    var options = {
+    const options = {
         database: 'rf-server/3050:d:/bases/test/node_firebird.fdb',
         user: 'SYSDBA',
         password: 'masterkey'
@@ -15,7 +17,7 @@
 
     describe('fb.utils', function () {
         it('parseUrl', function () {
-            var parsed;
+            let parsed;
 
             parsed = fb.parseUrl(null);
             assert.equal(parsed, null);
@@ -42,8 +44,8 @@
             assert.equal(parsed.database, 'd:/test.fdb', 'invalid database ');
         });
 
-        it('parseServerVersion', function() {
-            var parsed;
+        it('parseServerVersion', function () {
+            let parsed;
 
             parsed = FirebirdUtils.parseServerVersion(null);
             assert.deepEqual(parsed, {major: 0, minor: 0, patch: 0});
@@ -67,567 +69,514 @@
 
     describe('fb.pool', function () {
         it('pool.getConnection', function (done) {
-            var pool = fb.createPool(5, options.database, options.user, options.password);
+            const pool = fb.createPool(options.database, options.user, options.password, {max: 3});
             assert(pool != null, 'pool is not created');
 
-            pool.getConnection()
-                .then(function (connection) {
-                    assert(connection.isConnected(), 'connection is not opened');
+            Promise
+                .map([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], (value) => {
+                    return pool.acquire(0)
+                        .then((connection) => {
+                            assert(connection.isConnected(), 'connection is not opened');
 
-                    return connection.queryRead('SELECT 1 AS num FROM rdb$database')
-                        .then(function(result) {
-                            assert.notEqual(result, null);
-                            assert.equal(result.length, 1);
-                            assert.equal(result[0].num, 1);
-                        })
-                        .then(function() {
-                            return pool.close();
-                        })
-                        .then(function () {
-                            done();
+                            return connection.queryRead('SELECT ' + value + ' AS num FROM rdb$database')
+                                .then((result) => {
+                                    assert.notEqual(result, null);
+                                    assert.equal(result.length, 1);
+                                    assert.equal(DataUtils.get(result[0], 'num'), value);
+                                })
+                                .then(() => pool.release(connection));
                         });
-                })
+                }, {concurrency: 10})
+                .then(() => done())
                 .done();
         });
     });
 
-
     describe('fb.connection', function () {
         it('connection.open, connection.close', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
             assert(connection != null, 'connection is not created');
 
             connection.open()
-                .then(function () {
+                .then(() => {
                     assert(connection.isConnected(), 'connection is not opened');
-
-                    return connection.close()
-                        .then(function () {
-                            assert(!connection.isConnected(), 'connection is not closed');
-                            done();
-                        });
                 })
+                .then(() => connection.close())
+                .then(() => {
+                    assert(!connection.isConnected(), 'connection is not closed');
+                })
+                .then(() => done())
                 .done();
         });
     });
 
     describe('fb.transactions', function () {
-        it('tr.getRead and rollback', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+        it('tr.getRead', function (done) {
+            const connection = fb.createConnection(options.database, options.user, options.password);
 
             connection.open()
-                .then(function () {
+                .then(() => {
                     return connection.getReadTransaction()
-                        .then(function (transaction) {
+                        .then((transaction) => {
                             assert.notEqual(transaction, null);
-
-                            return transaction.rollback()
-                                .finally(function () {
-                                    done();
-                                });
                         });
                 })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('read transaction must be always the same', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
 
             connection.open()
-                .then(function () {
+                .then(() => {
                     return connection.getReadTransaction()
-                        .then(function (transaction1) {
+                        .then((transaction1) => {
                             assert.notEqual(transaction1, null);
 
                             return connection.getReadTransaction()
-                                .then(function (transaction2) {
+                                .then((transaction2) => {
                                     assert.notEqual(transaction2, null);
                                     assert.equal(transaction1, transaction2);
-
-                                    return connection.close()
-                                        .finally(function() {
-                                            done();
-                                        });
                                 });
                         });
                 })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('read transaction must not write', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
 
             connection.open()
-                .then(function () {
+                .then(() => {
                     return connection.getReadTransaction()
-                        .then(function (transaction) {
+                        .then((transaction) => {
                             return transaction.query('INSERT INTO test_table (int_field) VALUES (1) RETURNING int_field')
-                                .then(function(result) {
+                                .then((result) => {
                                     assert.fail('Read transaction did update. Must be an exception');
                                 })
-                                .catch(function(e) {
+                                .catch((e) => {
                                     assert.notEqual(e, null);
                                     assert.equal(e.code, 335544361);  // attempted update during read-only transaction
-                                })
-                                .finally(function () {
-                                    done();
                                 });
                         });
                 })
+                .then(() => done())
                 .done();
         });
     });
 
     describe('fb.queries', function () {
         it('execute query on custom transaction and return result', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
 
             connection.open()
-                .then(function () {
-                    return connection.getWriteTransaction();
-                })
-                .then(function (transaction) {
+                .then(() => connection.getWriteTransaction())
+                .then((transaction) => {
                     return transaction.query('SELECT 1 + CAST(? AS INTEGER) AS num FROM rdb$database', [2])
-                        .then(function (result) {
+                        .then((result) => {
                             assert.notEqual(result, null);
                             assert.equal(result.length, 1);
                             assert.equal(result[0].num, 3);
                         })
-                        .then(transaction.rollback.bind(transaction));
+                        .then(() => transaction.rollback());
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('execute read query and return result', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
 
             connection.open()
-                .then(function () {
-                    return connection.queryRead('SELECT 1 + CAST(? AS INTEGER) AS num FROM rdb$database', [2]);
-                })
-                .then(function (result) {
+                .then(() => connection.queryRead('SELECT 1 + CAST(? AS INTEGER) AS num FROM rdb$database', [2]))
+                .then((result) => {
                     assert.notEqual(result, null);
                     assert.equal(result.length, 1);
                     assert.equal(result[0].num, 3);
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('execute write query and return result', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
 
             connection.open()
-                .then(function () {
-                    return connection.queryWrite('SELECT 1 + CAST(? AS INTEGER) AS num FROM rdb$database', [2]);
-                })
-                .then(function (result) {
+                .then(() => connection.queryWrite('SELECT 1 + CAST(? AS INTEGER) AS num FROM rdb$database', [2]))
+                .then((result) => {
                     assert.notEqual(result, null);
                     assert.equal(result.length, 1);
                     assert.equal(result[0].num, 3);
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('transaction can query', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
 
             connection.open()
-                .then(function () {
-                    return connection.getReadTransaction();
+                .then(() => connection.getReadTransaction())
+                .then((transaction) => transaction.query('SELECT 1 + CAST(? AS INTEGER) AS num FROM rdb$database', [2]))
+                .then((result) => {
+                    assert.notEqual(result, null);
+                    assert.equal(result.length, 1);
+                    assert.equal(result[0].num, 3);
                 })
-                .then(function (transaction) {
-                    return transaction.query('SELECT 1 + CAST(? AS INTEGER) AS num FROM rdb$database', [2])
-                        .then(function (result) {
-                            assert.notEqual(result, null);
-                            assert.equal(result.length, 1);
-                            assert.equal(result[0].num, 3);
-                        });
-                })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('prepares statement and repeatedly executes it', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
 
             connection.open()
-                .then(function () {
-                    return connection.prepareReadStatement('SELECT 1 + CAST(? AS INTEGER) AS num FROM rdb$database');
-                })
-                .then(function (statement) {
+                .then(() => connection.prepareReadStatement('SELECT 1 + CAST(? AS INTEGER) AS num FROM rdb$database'))
+                .then((statement) => {
                     assert.notEqual(statement, null);
 
                     return Promise.resolve()
-                        .then(function () {
-                            return statement.execute([1]).then(function (result) {
-                                assert.equal(result[0].num, 2);
-                                statement.close();
-                            });
+                        .then(() => statement.execute([1]))
+                        .then((result) => {
+                            assert.equal(result[0].num, 2);
+                            return statement.close();
                         })
-                        .then(function () {
-                            return statement.execute([2]).then(function (result) {
-                                assert.equal(result[0].num, 3);
-                                statement.close();
-                            });
+
+                        .then(() => statement.execute([2]))
+                        .then((result) => {
+                            assert.equal(result[0].num, 3);
+                            return statement.close();
                         })
-                        .then(function () {
-                            return statement.execute([3]).then(function (result) {
-                                assert.equal(result[0].num, 4);
-                                statement.close();
-                            });
+
+                        .then(() => statement.execute([3]))
+                        .then((result) => {
+                            assert.equal(result[0].num, 4);
+                            return statement.close();
                         })
-                        .then(statement.drop.bind(statement));
+
+                        .then(() => statement.drop());
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('transaction can prepare statement', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
 
             connection.open()
-                .then(function () {
-                    return connection.getReadTransaction();
-                })
-                .then(function (transaction) {
-                    return transaction.prepareStatement('SELECT 1 + CAST(? AS INTEGER) AS num FROM rdb$database');
-                })
-                .then(function (statement) {
+                .then(() => connection.getReadTransaction())
+                .then((transaction) => transaction.prepareStatement('SELECT 1 + CAST(? AS INTEGER) AS num FROM rdb$database'))
+                .then((statement) => {
                     assert.notEqual(statement, null);
 
                     return Promise.resolve()
-                        .then(function () {
-                            return statement.execute([1]).then(function (result) {
-                                assert.equal(result[0].num, 2);
-                                statement.close();
-                            });
+                        .then(() => statement.execute([1]))
+                        .then((result) => {
+                            assert.equal(result[0].num, 2);
+                            return statement.close();
                         })
-                        .then(function () {
-                            return statement.execute([2]).then(function (result) {
-                                assert.equal(result[0].num, 3);
-                                statement.close();
-                            });
+
+                        .then(() => statement.execute([2]))
+                        .then((result) => {
+                            assert.equal(result[0].num, 3);
+                            return statement.close();
                         })
-                        .then(function () {
-                            return statement.execute([3]).then(function (result) {
-                                assert.equal(result[0].num, 4);
-                                statement.close();
-                            });
+
+                        .then(() => statement.execute([3]))
+                        .then((result) => {
+                            assert.equal(result[0].num, 4);
+                            return statement.close();
                         })
-                        .then(statement.drop.bind(statement));
+
+                        .then(() => statement.drop());
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('statement can execute procedure', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
 
             connection.open()
-                .then(function () {
-                    return connection.prepareReadStatement('EXECUTE PROCEDURE test_procedure');
-                })
-                .then(function (statement) {
+                .then(() => connection.prepareReadStatement('EXECUTE PROCEDURE test_procedure'))
+                .then((statement) => {
                     assert.notEqual(statement, null);
 
                     return statement.execute([1])
-                        .then(function (result) {
+                        .then((result) => {
                             assert.equal(result[0].return_value, 1);
-                            statement.close();
+                            return statement.close();
                         })
-                        .then(statement.drop.bind(statement));
+                        .then(() => statement.drop());
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('statement can execute DML', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
 
             connection.open()
-                .then(function () {
-                    return connection.getWriteTransaction();
-                })
-                .then(function (transaction) {
+                .then(() => connection.getWriteTransaction())
+                .then((transaction) => {
                     return transaction.prepareStatement('INSERT INTO test_table (int_field) VALUES (?)')
-                        .then(function (statement) {
+                        .then((statement) => {
                             return Promise.resolve()
-                                .then(function () {
-                                    return statement.execute([1]).then(function (result) {
-                                        assert.notEqual(result, null);
-                                        assert.equal(result.length, 0);
+                                .then(() => statement.execute([1]))
+                                .then((result) => {
+                                    assert.notEqual(result, null);
+                                    assert.equal(result.length, 0);
 
-                                        statement.close();
-                                    });
+                                    return statement.close();
                                 })
-                                .then(function () {
-                                    return statement.execute([2]).then(function (result) {
-                                        assert.notEqual(result, null);
-                                        assert.equal(result.length, 0);
 
-                                        statement.close();
-                                    });
+                                .then(() => statement.execute([2]))
+                                .then((result) => {
+                                    assert.notEqual(result, null);
+                                    assert.equal(result.length, 0);
+
+                                    return statement.close();
                                 })
-                                .then(statement.drop.bind(statement));
+
+                                .then(() => statement.drop());
                         })
-                        .then(function () {
-                            return transaction.query('DELETE FROM test_table');
-                        })
-                        .then(transaction.commit.bind(transaction));
+                        .then(() => transaction.query('DELETE FROM test_table'))
+                        .then(() => transaction.commit());
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
     });
 
     describe('fb.metadata', function () {
         it('can check generator existence', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
-                .then(function () {
-                    return Promise.resolve().then(function () {
-                        return connection.metadata.generatorExists('').then(function (exists) {
+                .then(() => {
+                    return Promise.resolve()
+                        .then(() => connection.metadata.generatorExists(''))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent generator');
-                        });
-                    }).then(function () {
-                        return connection.metadata.generatorExists('test_generator').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.generatorExists('test_generator'))
+                        .then((exists) => {
                             assert.equal(exists, true, 'Existent generator not found');
-                        });
-                    }).then(function () {
-                        return connection.metadata.generatorExists('test_generator_1').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.generatorExists('test_generator_1'))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent generator');
                         });
-                    });
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('can check domain existence', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
-                .then(function () {
-                    return Promise.resolve().then(function () {
-                        return connection.metadata.domainExists('').then(function (exists) {
+                .then(() => {
+                    return Promise.resolve()
+                        .then(() => connection.metadata.domainExists(''))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent domain');
-                        });
-                    }).then(function () {
-                        return connection.metadata.domainExists('test_domain').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.domainExists('test_domain'))
+                        .then((exists) => {
                             assert.equal(exists, true, 'Existent domain not found');
-                        });
-                    }).then(function () {
-                        return connection.metadata.domainExists('test_domain_1').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.domainExists('test_domain_1'))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent domain');
                         });
-                    });
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('can check table existence', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
-                .then(function (tr) {
-                    return Promise.resolve().then(function () {
-                        return connection.metadata.tableExists('').then(function (exists) {
+                .then(() => {
+                    return Promise.resolve()
+                        .then(() => connection.metadata.tableExists(''))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent table');
-                        });
-                    }).then(function () {
-                        return connection.metadata.tableExists('test_table').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.tableExists('test_table'))
+                        .then((exists) => {
                             assert.equal(exists, true, 'Existent table not found');
-                        });
-                    }).then(function () {
-                        return connection.metadata.tableExists('test_table_1').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.tableExists('test_table_1'))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent table');
                         });
-                    });
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('can check field existence', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
-                .then(function () {
-                    return Promise.resolve().then(function () {
-                        return connection.metadata.fieldExists('').then(function (exists) {
+                .then(() => {
+                    return Promise.resolve()
+                        .then(() => connection.metadata.fieldExists(''))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent table field');
-                        });
-                    }).then(function () {
-                        return connection.metadata.fieldExists('test_table', 'int_field').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.fieldExists('test_table', 'int_field'))
+                        .then((exists) => {
                             assert.equal(exists, true, 'Existent table field not found');
-                        });
-                    }).then(function () {
-                        return connection.metadata.fieldExists('test_table_1', 'int_field').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.fieldExists('test_table_1', 'int_field'))
+                        .then((exists) => {
+                            assert.equal(exists, false, 'Found not existent table field');
+                        })
+
+                        .then(() => connection.metadata.fieldExists('test_table', 'int_field_1'))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent table field');
                         });
-                    }).then(function () {
-                        return connection.metadata.fieldExists('test_table', 'int_field_1').then(function (exists) {
-                            assert.equal(exists, false, 'Found not existent table field');
-                        });
-                    });
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('can check index existence', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
-                .then(function () {
-                    return Promise.resolve().then(function () {
-                        return connection.metadata.indexExists('').then(function (exists) {
+                .then(() => {
+                    return Promise.resolve()
+                        .then(() => connection.metadata.indexExists(''))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent index');
-                        });
-                    }).then(function () {
-                        return connection.metadata.indexExists('test_x_table').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.indexExists('test_x_table'))
+                        .then((exists) => {
                             assert.equal(exists, true, 'Existent index not found');
-                        });
-                    }).then(function () {
-                        return connection.metadata.indexExists('test_x_table_1').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.indexExists('test_x_table_1'))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent index');
                         });
-                    });
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('can check procedure existence', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
-                .then(function () {
-                    return Promise.resolve().then(function () {
-                        return connection.metadata.procedureExists('').then(function (exists) {
+                .then(() => {
+                    return Promise.resolve()
+                        .then(() => connection.metadata.procedureExists(''))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent procedure');
-                        });
-                    }).then(function () {
-                        return connection.metadata.procedureExists('test_procedure').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.procedureExists('test_procedure'))
+                        .then((exists) => {
                             assert.equal(exists, true, 'Existent procedure not found');
-                        });
-                    }).then(function () {
-                        return connection.metadata.procedureExists('test_procedure_1').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.procedureExists('test_procedure_1'))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent procedure');
                         });
-                    });
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('can check trigger existence', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
-                .then(function (tr) {
-                    return Promise.resolve().then(function () {
-                        return connection.metadata.triggerExists('').then(function (exists) {
+                .then(() => {
+                    return Promise.resolve()
+                        .then(() => connection.metadata.triggerExists(''))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent trigger');
-                        });
-                    }).then(function () {
-                        return connection.metadata.triggerExists('test_bi_table').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.triggerExists('test_bi_table'))
+                        .then((exists) => {
                             assert.equal(exists, true, 'Existent trigger not found');
-                        });
-                    }).then(function () {
-                        return connection.metadata.triggerExists('test_bi_table_1').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.triggerExists('test_bi_table_1'))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent trigger');
                         });
-                    });
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('can check exception existence', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
-                .then(function () {
-                    return Promise.resolve().then(function () {
-                        return connection.metadata.exceptionExists('').then(function (exists) {
+                .then(() => {
+                    return Promise.resolve()
+                        .then(() => connection.metadata.exceptionExists(''))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent exception');
-                        });
-                    }).then(function () {
-                        return connection.metadata.exceptionExists('test_exception').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.exceptionExists('test_exception'))
+                        .then((exists) => {
                             assert.equal(exists, true, 'Existent exception not found');
-                        });
-                    }).then(function () {
-                        return connection.metadata.exceptionExists('test_exception_1').then(function (exists) {
+                        })
+
+                        .then(() => connection.metadata.exceptionExists('test_exception_1'))
+                        .then((exists) => {
                             assert.equal(exists, false, 'Found not existent exception');
                         });
-                    });
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
         it('can check server version', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
-                .then(function () {
-                    return Promise.resolve().then(function () {
-                        return connection.metadata.getServerVersion().then(function (version) {
-                            assert.notEqual(version);
-                            assert(version.major > 0, 'Invalid MAJOR server version');
-                            assert(version.minor > 0, 'Invalid MINOR server version');
-                        });
-                    });
+                .then(() => connection.metadata.getServerVersion())
+                .then((version) => {
+                    assert.notEqual(version);
+                    assert(version.major > 0, 'Invalid MAJOR server version');
+                    assert(version.minor > 0, 'Invalid MINOR server version');
                 })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
     });
@@ -638,21 +587,15 @@
         });
 
         it('create migrations metadata', function (done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
-                .then(function () {
-                    return connection.migration.init();
+                .then(() => connection.migration.init())
+                .then(() => connection.metadata.tableExists('rf_migration'))
+                .then((exists) => {
+                    assert.equal(exists, true, 'rf_migration table was not created by fb.migration.init');
                 })
-                .then(function () {
-                    return connection.metadata.tableExists('rf_migration')
-                        .then(function (exists) {
-                            assert.equal(exists, true, 'rf_migration table was not created by fb.migration.init');
-                        });
-                })
-                .then(connection.close.bind(connection))
-                .then(function() {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         });
 
@@ -684,24 +627,20 @@
         });
 
         function dropMigrationTable(done) {
-            var connection = fb.createConnection(options.database, options.user, options.password);
+            const connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()
-                .then(function () {
-                    return connection.getWriteTransaction();
-                })
-                .then(function (tr) {
+                .then(() => connection.getWriteTransaction())
+                .then((tr) => {
                     return connection.metadata.tableExists('rf_migration')
-                        .then(function (exists) {
+                        .then((exists) => {
                             if (exists) {
                                 return connection.query(tr, 'DROP TABLE rf_migration');
                             }
                         })
-                        .then(tr.commit.bind(tr));
+                        .then(() => tr.commit());
                 })
-                .then(connection.close.bind(connection))
-                .then(function () {
-                    done();
-                })
+                .then(() => connection.close())
+                .then(() => done())
                 .done();
         }
     });
