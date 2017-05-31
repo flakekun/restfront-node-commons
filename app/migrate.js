@@ -38,7 +38,7 @@
 
             // Обработка исключений в миграции
             .catch((e) => {
-                Log.error('Ошибка при выполнении миграции %d "%s": \n', migration.id, migration.name, e);
+                Log.error('Ошибка при выполнении миграции %d "%s": \n', migration.data.id, migration.data.name, e);
                 throw e;
             });
     }
