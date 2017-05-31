@@ -27,8 +27,6 @@
          * @returns {Promise<data>}
          */
         query(sql, params) {
-            utils.updateLastActive(this.connection);
-
             return new Promise((resolve, reject) => {
                 this.transaction.query(sql, params, (err, result, output, isArray) => {
                     if (err) {
@@ -46,8 +44,6 @@
          * @returns {Promise}
          */
         commit() {
-            utils.updateLastActive(this.connection);
-
             return Promise.promisify(this.transaction.commit, {context: this.transaction})();
         }
 
@@ -57,8 +53,6 @@
          * @returns {Promise}
          */
         rollback() {
-            utils.updateLastActive(this.connection);
-
             return Promise.promisify(this.transaction.rollback, {context: this.transaction})();
         }
 
@@ -69,8 +63,6 @@
          * @returns {Promise<PreparedStatement>}
          */
         prepareStatement(sql) {
-            utils.updateLastActive(this.connection);
-
             return Promise.promisify(this.transaction.newStatement, {context: this.transaction})(sql)
                 .then((statement) => {
                     return new PreparedStatement(this.connection, this, statement);

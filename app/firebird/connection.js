@@ -20,7 +20,7 @@
          */
         constructor(url, user, password) {
             this.database = null;
-            /** @member {Promise<Transaction>} */
+            /** @member {Promise.<Transaction>} */
             this.readTransactionPromise = null;
 
             this.options = utils.parseUrl(url);
@@ -32,10 +32,6 @@
             this.metadata = new Metadata(this);
             /** @member {Migration} */
             this.migration = new Migration(this);
-
-            // Время последней активности соединения
-            this.lastActive = 0;
-            utils.updateLastActive(this);
         }
 
         /**
@@ -44,9 +40,7 @@
          * @promise {Connection}
          */
         create() {
-            utils.updateLastActive(this);
-
-            return Promise.promisify(FBDriver.create.bind(FBDriver))(this.options)
+            return Promise.promisify(FBDriver.create, {context: FBDriver})(this.options)
                 .then((db) => {
                     this.database = db;
                     return this;
@@ -59,9 +53,7 @@
          * @promise {Connection}
          */
         open() {
-            utils.updateLastActive(this);
-
-            return Promise.promisify(FBDriver.attach.bind(FBDriver))(this.options)
+            return Promise.promisify(FBDriver.attach, {context: FBDriver})(this.options)
                 .then((db) => {
                     this.database = db;
                     return this;
@@ -83,8 +75,6 @@
          * @returns Promise
          */
         close() {
-            utils.updateLastActive(this);
-
             return new Promise((resolve, reject) => {
                 if (!this.isConnected()) {
                     return reject(new Error('Соединение с БД не установлено'));
@@ -115,11 +105,9 @@
         /**
          * Получить читающую транзакцию
          *
-         * @returns Promise<Transaction>
+         * @returns Promise.<Transaction>
          */
         getReadTransaction() {
-            utils.updateLastActive(this);
-
             // Если еще не обращались к читающей транзакции, то создадим Promise который будет содержать в себе читающую транзакцию
             if (!this.readTransactionPromise) {
                 this.readTransactionPromise = new Promise((resolve, reject) => {
@@ -144,11 +132,9 @@
         /**
          * Получить пишущую транзакцию
          *
-         * @returns Promise<Transaction>
+         * @returns Promise.<Transaction>
          */
         getWriteTransaction() {
-            utils.updateLastActive(this);
-
             return new Promise((resolve, reject) => {
                 if (!this.isConnected()) {
                     return reject(new Error('Соединение с БД не установлено'));
@@ -171,11 +157,9 @@
          * @param transaction {Transaction}  Транзакция
          * @param sql         {String}       Текст запроса
          * @param [params]    {Array}        Массив параметров запроса
-         * @returns Promise<Array>
+         * @returns Promise.<Array>
          */
         query(transaction, sql, params) {
-            utils.updateLastActive(this);
-
             return transaction.query(sql, params);
         }
 
@@ -184,11 +168,9 @@
          *
          * @param sql      {String}  Текст запроса
          * @param [params] {Array}   Массив параметров запроса
-         * @returns Promise<Array>
+         * @returns Promise.<Array>
          */
         queryRead(sql, params) {
-            utils.updateLastActive(this);
-
             // Берем читающую транзакцию
             return this.getReadTransaction()
             // Выполняем запрос
@@ -200,11 +182,9 @@
          *
          * @param sql      {String}  Текст запроса
          * @param [params] {Array}   Массив параметров запроса
-         * @returns Promise<Array>
+         * @returns Promise.<Array>
          */
         queryWrite(sql, params) {
-            utils.updateLastActive(this);
-
             // Берем новую пищущую транзакцию
             return this.getWriteTransaction()
                 .then((transaction) => {
@@ -230,7 +210,7 @@
         /**
          * Выполнить пишущие действия на основном соединении
          * @param {Function<Promise>} action Действия
-         * @returns {Promise}
+         * @returns {Promise.<T>}
          */
         onWriteTransaction(action) {
             return this.getWriteTransaction()
@@ -263,8 +243,6 @@
          * @returns Promise<PreparedStatement>
          */
         prepareStatement(transactionWrapper, sql) {
-            utils.updateLastActive(this);
-
             return transactionWrapper.prepareStatement(sql);
         }
 
@@ -275,19 +253,9 @@
          * @returns Promise<PreparedStatement>
          */
         prepareReadStatement(sql) {
-            utils.updateLastActive(this);
-
             // Берем читающую транзакцию
             return this.getReadTransaction()
                 .then((tr) => this.prepareStatement(tr, sql));
-        }
-
-        /**
-         * Сколько мс соединение простаивало
-         * @returns {number}
-         */
-        getInactiveTime() {
-            return Date.now() - this.lastActive;
         }
     }
 

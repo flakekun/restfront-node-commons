@@ -32,8 +32,6 @@
          * @promise {data}
          */
         execute(params) {
-            utils.updateLastActive(this.connection);
-
             return new Promise((resolve, reject) => {
                 this.statement.execute(this.transaction, params, (err) => {
                     if (err) {
@@ -89,9 +87,7 @@
          * @promise {}
          */
         close() {
-            utils.updateLastActive(this.connection);
-
-            return Promise.promisify(this.statement.close.bind(this.statement))();
+            return Promise.promisify(this.statement.close, {context: this.statement})();
         }
 
         /**
@@ -100,9 +96,7 @@
          * @promise {}
          */
         drop() {
-            utils.updateLastActive(this.connection);
-
-            return Promise.promisify(this.statement.drop.bind(this.statement))();
+            return Promise.promisify(this.statement.drop, {context: this.statement})();
         }
     }
 

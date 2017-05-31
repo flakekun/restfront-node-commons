@@ -3,7 +3,6 @@
 
     module.exports = {
         parseUrl,
-        updateLastActive,
         parseServerVersion
     };
 
@@ -40,14 +39,6 @@
         }
 
         return result;
-    }
-
-    /**
-     * Обновить время последней активности на соединении
-     * @param {Connection} connection Соединение
-     */
-    function updateLastActive(connection) {
-        connection.lastActive = Date.now();
     }
 
     function parseServerVersion(versionStr) {
