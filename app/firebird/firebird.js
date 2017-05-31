@@ -36,8 +36,8 @@
                 return connection.close();
             },
             validate(connection) {
-                return connection.queryRead('SELECT 1 AS value FROM rdb$database')
-                    .then((rows) => Boolean(rows && rows.length === 1 && rows[0].value === 1))
+                return connection.queryRead('SELECT 1 AS val FROM rdb$database')
+                    .then((rows) => Boolean(rows && rows.length === 1 && rows[0].val === 1))
                     .catch(() => false);
             }
         };
