@@ -160,7 +160,8 @@
                                 })
                                 .catch((e) => {
                                     assert.notEqual(e, null);
-                                    assert.equal(e.code, 335544361);  // attempted update during read-only transaction
+                                    assert.equal(e.message, "attempted update during read-only transaction");
+                                    // assert.equal(e.code, 335544361);  // attempted update during read-only transaction
                                 });
                         });
                 })
@@ -314,7 +315,7 @@
 
                     return statement.execute([1])
                         .then((result) => {
-                            assert.equal(result[0].return_value, 1);
+                            assert.equal(result.return_value, 1);
                             return statement.close();
                         })
                         .then(() => statement.drop());

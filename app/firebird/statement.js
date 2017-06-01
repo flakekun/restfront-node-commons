@@ -64,7 +64,7 @@
                                         return reject(err);
                                     }
 
-                                    resolve(ret.data);
+                                    resolve(ret.data[0].data);
                                 });
                             } else {
                                 resolve([]);  // Ответим пустым массивом

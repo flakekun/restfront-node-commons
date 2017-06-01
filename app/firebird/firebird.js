@@ -3,7 +3,7 @@
 
     const Promise = require('bluebird');
     const GenericPool = require('generic-pool');
-    const FBDriver = require('node-firebird');
+    const FBDriver = require('node-firebird-dev');
     const Connection = require('./connection');
     const utils = require('./utils');
 

@@ -2,11 +2,28 @@
     'use strict';
 
     const Promise = require('bluebird');
-    const FBDriver = require('node-firebird');
+    const FBDriver = require('node-firebird-dev');
     const Transaction = require('./transaction');
     const Metadata = require('./metadata');
     const Migration = require('./migration');
     const utils = require('./utils');
+
+    /* Типы транзакций (взято из node-firebird) */
+    // read, read_committed, rec_version
+    const ISOLATION_READ = [
+        /* ISC_tpb_version3 */ 3,
+        /* ISC_tpb_read */ 8,
+        /* ISC_tpb_read_committed */ 15,
+        /* ISC_tpb_rec_version */ 17
+    ];
+    // write, nowait; read_committed; rec_version
+    const ISOLATION_WRITE = [
+        /* ISC_tpb_version3 */ 3,
+        /* ISC_tpb_write */ 9,
+        /* ISC_tpb_nowait */ 7,
+        /* ISC_tpb_read_committed */ 15,
+        /* ISC_tpb_rec_version */ 17
+    ];
 
     /**
      * Подключение к БД
@@ -116,7 +133,7 @@
                     }
 
                     // Откроем читающую транзакцию и запомним ее в этом соединении
-                    this.database.transaction(FBDriver.ISOLATION_READ, (err, innerTransaction) => {
+                    this.database.transaction(ISOLATION_READ, (err, innerTransaction) => {
                         if (err) {
                             return reject(err);
                         }
@@ -141,7 +158,7 @@
                 }
 
                 // Откроем пишущую транзакцию
-                this.database.transaction(FBDriver.ISOLATION_WRITE, (err, fbTransaction) => {
+                this.database.transaction(ISOLATION_WRITE, (err, fbTransaction) => {
                     if (err) {
                         return reject(err);
                     }
