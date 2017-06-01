@@ -9,20 +9,24 @@
     const utils = require('./utils');
 
     /* Типы транзакций (взято из node-firebird) */
-    // read, read_committed, rec_version
     const ISOLATION_READ = [
         /* ISC_tpb_version3 */ 3,
         /* ISC_tpb_read */ 8,
         /* ISC_tpb_read_committed */ 15,
         /* ISC_tpb_rec_version */ 17
     ];
-    // write, nowait; read_committed; rec_version
     const ISOLATION_WRITE = [
         /* ISC_tpb_version3 */ 3,
         /* ISC_tpb_write */ 9,
         /* ISC_tpb_nowait */ 7,
         /* ISC_tpb_read_committed */ 15,
         /* ISC_tpb_rec_version */ 17
+    ];
+    const ISOLATION_SNAPSHOT = [
+        /* ISC_tpb_version3 */ 3,
+        /* ISC_tpb_write */ 9,
+        /* ISC_tpb_nowait */ 7,
+        /* isc_tpb_concurrency */ 2
     ];
 
     /**
@@ -159,6 +163,28 @@
 
                 // Откроем пишущую транзакцию
                 this.database.transaction(ISOLATION_WRITE, (err, fbTransaction) => {
+                    if (err) {
+                        return reject(err);
+                    }
+
+                    resolve(new Transaction(this, fbTransaction));
+                });
+            });
+        }
+
+        /**
+         * Получить пишущую SNAPSHOT транзакцию
+         *
+         * @returns Promise.<Transaction>
+         */
+        getSnapshotTransaction() {
+            return new Promise((resolve, reject) => {
+                if (!this.isConnected()) {
+                    return reject(new Error('Соединение с БД не установлено'));
+                }
+
+                // Откроем пишущую SNAPSHOT транзакцию
+                this.database.transaction(ISOLATION_SNAPSHOT, (err, fbTransaction) => {
                     if (err) {
                         return reject(err);
                     }
