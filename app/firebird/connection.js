@@ -251,6 +251,36 @@
         }
 
         /**
+         * Выполнить запрос на SNAPSHOT транзакции и сразу закомитить ее
+         *
+         * @param sql      {String}  Текст запроса
+         * @param [params] {Array}   Массив параметров запроса
+         * @returns Promise.<Array>
+         */
+        querySnapshot(sql, params) {
+            // Берем новую пищущую транзакцию
+            return this.getSnapshotTransaction()
+                .then((transaction) => {
+                    // Выполняем запрос
+                    return transaction.query(sql, params)
+
+                    // Закомитим транзакцию, потом вернем результат запроса
+                        .then((result) => {
+                            return transaction.commit()
+                                .then(() => result);
+                        })
+
+                        // В случае ошибки откатим транзакцию и, одновременно, перебросим ошибку
+                        .catch((e) => {
+                            return transaction.rollback()
+                                .finally(() => {
+                                    throw e;
+                                });
+                        });
+                });
+        }
+
+        /**
          * Выполнить пишущие действия на основном соединении
          * @param {Function<Promise>} action Действия
          * @returns {Promise.<T>}
@@ -263,6 +293,34 @@
                     return action(transaction)
 
                         // Коммит и возврат результата
+                        .then((actionResult) => {
+                            return transaction.commit()
+                                .then(() => actionResult);
+                        })
+
+                        // Роллбэк и проброс ошибки
+                        .catch((e) => {
+                            return transaction.rollback()
+                                .finally(() => {
+                                    throw e;
+                                });
+                        });
+                });
+        }
+
+        /**
+         * Выполнить действия на SNAPSHOT транзакции на основном соединении
+         * @param {Function<Promise>} action Действия
+         * @returns {Promise.<T>}
+         */
+        onSnapshotTransaction(action) {
+            return this.getSnapshotTransaction()
+                .then((transaction) => {
+
+                    // Выполним полезную работу
+                    return action(transaction)
+
+                    // Коммит и возврат результата
                         .then((actionResult) => {
                             return transaction.commit()
                                 .then(() => actionResult);
