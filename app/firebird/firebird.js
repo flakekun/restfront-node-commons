@@ -29,8 +29,10 @@
 
         const factory = {
             create() {
-                const connection = createConnection(url, user, password);
-                return connection.open();
+                return Promise.try(() => {
+                    const connection = createConnection(url, user, password);
+                    return connection.open();
+                });
             },
             destroy(connection) {
                 return connection.close();
