@@ -48,6 +48,15 @@
         }
 
         /**
+         * Коммит транзакции ПРОМЕЖУТОЧНЫЙ (коммитим итерацию, при этом остаемся в транзакции)
+         *
+         * @returns {Promise}
+         */
+        commitRetaining() {
+            return Promise.promisify(this.transaction.commitRetaining, {context: this.transaction})();
+        }
+
+        /**
          * Откат транзакции
          *
          * @returns {Promise}
