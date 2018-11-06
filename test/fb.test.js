@@ -467,6 +467,51 @@
                 .done();
         });
 
+		it('can check primary key existence', function (done) {
+			const connection = fb.createConnection(options.database, options.user, options.password);
+			connection.open()
+				.then(() => {
+					return Promise.resolve()
+						.then(() => connection.metadata.primaryKeyExists('key_field', 'pk_key_field'))
+						.then((exists) => {
+							assert.equal(exists, true, 'Found not existent index1');
+						})
+
+						.then(() => connection.metadata.primaryKeyExists('key_field2', 'pk_key_field'))
+						.then((exists) => {
+							assert.equal(exists, false, 'Found not existent index1');
+						})
+
+						.then(() => connection.metadata.primaryKeyExists('key_field2', 'pk_key_field2'))
+						.then((exists) => {
+							assert.equal(exists, true, 'Found not existent index');
+						});
+				})
+				.then(() => connection.close())
+				.then(() => done())
+				.done();
+		});
+
+		it('can check foreign key existence', function (done) {
+			const connection = fb.createConnection(options.database, options.user, options.password);
+			connection.open()
+				.then(() => {
+					return Promise.resolve()
+						.then(() => connection.metadata.foreignKeyExists('key_field', 'fk_key_field_1'))
+						.then((exists) => {
+							assert.equal(exists, true, 'Found not existent index1');
+						})
+
+						.then(() => connection.metadata.foreignKeyExists('key_field', 'fk_key_field_2'))
+						.then((exists) => {
+							assert.equal(exists, false, 'Found not existent index');
+						});
+				})
+				.then(() => connection.close())
+				.then(() => done())
+				.done();
+		});
+
         it('can check index existence', function (done) {
             const connection = fb.createConnection(options.database, options.user, options.password);
             connection.open()

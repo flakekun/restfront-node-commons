@@ -108,6 +108,40 @@
                 .then((result) => result && result.length > 0);
         }
 
+        primaryKeyExists(tableName, primaryKeyName) {
+			if (!tableName || !primaryKeyName) {
+				return Promise.resolve(false);
+			}
+
+			const sql = `
+                SELECT rdb$relation_name 
+                FROM rdb$relation_constraints 
+                WHERE 
+                	rdb$constraint_type = 'PRIMARY KEY' 
+                	AND rdb$relation_name = ? 
+                	AND rdb$constraint_name = ?
+            `;
+			return this.connection.queryRead(sql, [tableName.toUpperCase(), primaryKeyName.toUpperCase()])
+				.then((result) => result && result.length > 0);
+		}
+
+		foreignKeyExists(tableName, foreignKeyName) {
+			if (!tableName || !foreignKeyName) {
+				return Promise.resolve(false);
+			}
+
+			const sql = `
+                SELECT rdb$relation_name 
+                FROM rdb$relation_constraints 
+                WHERE 
+                	rdb$constraint_type = 'FOREIGN KEY' 
+                	AND rdb$relation_name = ? 
+                	AND rdb$constraint_name = ?
+            `;
+			return this.connection.queryRead(sql, [tableName.toUpperCase(), foreignKeyName.toUpperCase()])
+				.then((result) => result && result.length > 0);
+		}
+
         getServerVersion() {
             const sql = `
                 SELECT COALESCE(rdb$get_context('SYSTEM', 'ENGINE_VERSION'), '') AS version FROM rdb$database
