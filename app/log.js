@@ -104,8 +104,8 @@
         winstonLogger.add(WinstonDailyRotateFile, {
             name: LOGGER_APP_FILE,
             level: 'info',
-            filename: _logPath + _logFilePrefix,
-            datePattern: '_yyyy-MM-dd.log',
+            dirname: _logPath,
+            filename: _logFilePrefix + '_%DATE%.log',
             localTime: true,
             json: false,
             formatter: appFormatter,
@@ -131,8 +131,8 @@
                 // Лог в файл
                 new WinstonDailyRotateFile({
                     name: LOGGER_REQUEST_FILE,
-                    filename: _logPath + 'request',
-                    datePattern: '_yyyy-MM-dd.log',
+                    dirname: _logPath,
+                    filename: 'request_%DATE%.log',
                     json: false,
                     formatter: requestFormatter
                 })
