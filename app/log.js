@@ -114,11 +114,12 @@
         });
     }
 
-    /**
-     * Настройка лога запросов
-     * @returns {morgan}
-     */
-    function createRequestLog() {
+	/**
+	 * Настройка лога запросов
+	 * @param writeReqBody {Boolean} Осуществлять запись тела запроса
+	 * @returns {morgan}
+	 */
+	function createRequestLog(writeReqBody) {
         const requestLogger = new winston.Logger({
             level: 'info',
 
@@ -140,7 +141,13 @@
         });
 
         // Настраиваем morgan для использования winston лога
-        const format = ':remote-addr ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent" :response-time';
+		morgan.token('reqBody', function (req, res) { return JSON.stringify(req.body, null, '  ')});
+		morgan.token('nl', function () { return '\n'});
+		let format = '';
+		if ((writeReqBody !== undefined) && (writeReqBody))
+			format = ':remote-addr ":method :url HTTP/:http-version" :status :res[content-length]B ":referrer" ":user-agent" :response-time (ms):nl	Request:nl:reqBody'
+		else
+			format = ':remote-addr ":method :url HTTP/:http-version" :status :res[content-length]B ":referrer" ":user-agent" :response-time (ms)'
         return morgan(format, {
             stream: {
                 write: function (message, encoding) {
