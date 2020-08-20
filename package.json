@@ -23,7 +23,7 @@
     "winston-daily-rotate-file": "3.10.0"
   },
   "devDependencies": {
-    "bcrypt": "3.0.6",
+    "bcrypt": "5.0.0",
     "mocha": "6.2.0"
   },
   "jshintConfig": {
